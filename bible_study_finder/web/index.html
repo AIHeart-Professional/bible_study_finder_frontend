@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Find Bible study groups and churches in your area. Connect with local faith communities.">
+
+  <!-- Performance optimizations -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+  
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Bible Study Finder">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Bible Study Finder</title>
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- Loading screen styles -->
+  <style>
+    #loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #6B73FF 0%, #9A6DFC 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .loading-logo {
+      width: 80px;
+      height: 80px;
+      background: white;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      animation: pulse 2s ease-in-out infinite alternate;
+    }
+    
+    .loading-text {
+      color: white;
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    
+    .loading-subtitle {
+      color: rgba(255,255,255,0.8);
+      font-size: 16px;
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.05); }
+    }
+    
+    /* Hide loading screen when Flutter loads */
+    .flutter-loaded #loading {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading screen -->
+  <div id="loading">
+    <div class="loading-logo">📖</div>
+    <div class="loading-text">Bible Study Finder</div>
+    <div class="loading-subtitle">Connecting faith communities</div>
+    <div class="loading-spinner"></div>
+  </div>
+
+  <script>
+    // Hide loading screen when Flutter is ready
+    window.addEventListener('flutter-first-frame', function () {
+      document.body.classList.add('flutter-loaded');
+    });
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
