@@ -11,7 +11,7 @@ class HomePage extends StatelessWidget {
 
   static const List<AppFeature> features = [
     AppFeature(
-      title: 'Find Local Groups',
+      title: 'Find Groups',
       description: 'Discover Bible study groups in your area that match your preferences and schedule.',
       icon: '🔍',
     ),

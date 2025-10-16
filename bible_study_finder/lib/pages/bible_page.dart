@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../models/bible.dart';
+import '../services/bible_service.dart';
 
 class BiblePage extends StatefulWidget {
   const BiblePage({super.key});
@@ -8,34 +10,124 @@ class BiblePage extends StatefulWidget {
 }
 
 class _BiblePageState extends State<BiblePage> {
-  String selectedVersion = 'NIV';
-  String selectedBook = 'Genesis';
-  int selectedChapter = 1;
+  // State variables
+  Bible? selectedBible;
+  Book? selectedBook;
+  Chapter? selectedChapter;
   bool isReading = false;
+  bool isLoading = false;
+  String? errorMessage;
 
-  final List<String> bibleVersions = [
-    'NIV', 'ESV', 'NASB', 'KJV', 'NLT', 'CSB', 'NKJV', 'MSG'
-  ];
+  // Data lists
+  List<Bible> bibles = [];
+  List<Book> books = [];
+  List<Chapter> chapters = [];
+  String chapterContent = '';
 
-  final List<String> oldTestamentBooks = [
-    'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
-    'Joshua', 'Judges', 'Ruth', '1 Samuel', '2 Samuel',
-    '1 Kings', '2 Kings', '1 Chronicles', '2 Chronicles', 'Ezra',
-    'Nehemiah', 'Esther', 'Job', 'Psalms', 'Proverbs',
-    'Ecclesiastes', 'Song of Songs', 'Isaiah', 'Jeremiah', 'Lamentations',
-    'Ezekiel', 'Daniel', 'Hosea', 'Joel', 'Amos',
-    'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk',
-    'Zephaniah', 'Haggai', 'Zechariah', 'Malachi'
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadBibles();
+  }
 
-  final List<String> newTestamentBooks = [
-    'Matthew', 'Mark', 'Luke', 'John', 'Acts',
-    'Romans', '1 Corinthians', '2 Corinthians', 'Galatians', 'Ephesians',
-    'Philippians', 'Colossians', '1 Thessalonians', '2 Thessalonians', '1 Timothy',
-    '2 Timothy', 'Titus', 'Philemon', 'Hebrews', 'James',
-    '1 Peter', '2 Peter', '1 John', '2 John', '3 John',
-    'Jude', 'Revelation'
-  ];
+
+  // Load available Bible versions
+  Future<void> _loadBibles() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final availableBibles = await BibleService.getBibles();
+      setState(() {
+        bibles = availableBibles;
+        selectedBible = availableBibles.isNotEmpty ? availableBibles.first : null;
+        isLoading = false;
+      });
+      
+      if (selectedBible != null) {
+        _loadBooks(selectedBible!.id);
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to load Bible versions: $e';
+        isLoading = false;
+      });
+    }
+  }
+
+  // Load books for selected Bible
+  Future<void> _loadBooks(String bibleId) async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final availableBooks = await BibleService.getBooks(bibleId);
+      setState(() {
+        books = availableBooks;
+        selectedBook = availableBooks.isNotEmpty ? availableBooks.first : null;
+        isLoading = false;
+      });
+      
+      if (selectedBook != null) {
+        _loadChapters(bibleId, selectedBook!.id);
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to load books: $e';
+        isLoading = false;
+      });
+    }
+  }
+
+  // Load chapters for selected book
+  Future<void> _loadChapters(String bibleId, String bookId) async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final availableChapters = await BibleService.getChapters(bibleId, bookId);
+      setState(() {
+        chapters = availableChapters;
+        selectedChapter = availableChapters.isNotEmpty ? availableChapters.first : null;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to load chapters: $e';
+        isLoading = false;
+      });
+    }
+  }
+
+  // Load chapter content
+  Future<void> _loadChapterContent(String bibleId, String chapterId) async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final content = await BibleService.getChapterContent(bibleId, chapterId);
+      setState(() {
+        chapterContent = content;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to load chapter content: $e';
+        isLoading = false;
+      });
+      
+      // Show detailed error for debugging
+      print('Error loading chapter content: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +139,43 @@ class _BiblePageState extends State<BiblePage> {
   }
 
   Widget _buildSelectionView() {
+    if (isLoading && bibles.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Error',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              errorMessage!,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadBibles,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -117,25 +246,40 @@ class _BiblePageState extends State<BiblePage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                        if (isLoading && books.isEmpty) ...[
+                          const SizedBox(width: 8),
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ],
                     ],
                   ),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: selectedVersion,
+                  DropdownButtonFormField<Bible>(
+                    value: selectedBible,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       hintText: 'Select Bible Version',
                     ),
-                    items: bibleVersions.map((version) {
+                    items: bibles.map((bible) {
                       return DropdownMenuItem(
-                        value: version,
-                        child: Text(version),
+                        value: bible,
+                        child: Text('${bible.name} (${bible.abbreviation})'),
                       );
                     }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedVersion = value!;
-                      });
+                    onChanged: (bible) {
+                      if (bible != null) {
+                        setState(() {
+                          selectedBible = bible;
+                          selectedBook = null;
+                          selectedChapter = null;
+                          books.clear();
+                          chapters.clear();
+                        });
+                        _loadBooks(bible.id);
+                      }
                     },
                   ),
                 ],
@@ -146,149 +290,170 @@ class _BiblePageState extends State<BiblePage> {
           const SizedBox(height: 16),
 
           // Book Selection
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.library_books,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Select Book',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+          if (selectedBible != null) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.library_books,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Select Book',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    if (books.isNotEmpty) ...[
+                      // Old Testament
+                      ExpansionTile(
+                        title: const Text('Old Testament'),
+                        initiallyExpanded: selectedBook?.isOldTestament ?? false,
+                        children: [
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: books.where((book) => book.isOldTestament).map((book) {
+                              final isSelected = selectedBook?.id == book.id;
+                              return FilterChip(
+                                label: Text(book.name),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    selectedBook = book;
+                                    selectedChapter = null;
+                                    chapters.clear();
+                                  });
+                                  _loadChapters(selectedBible!.id, book.id);
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Old Testament
-                  ExpansionTile(
-                    title: const Text('Old Testament'),
-                    initiallyExpanded: oldTestamentBooks.contains(selectedBook),
-                    children: [
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: oldTestamentBooks.map((book) {
-                          final isSelected = selectedBook == book;
-                          return FilterChip(
-                            label: Text(book),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              setState(() {
-                                selectedBook = book;
-                                selectedChapter = 1;
-                              });
-                            },
-                          );
-                        }).toList(),
+                      
+                      // New Testament
+                      ExpansionTile(
+                        title: const Text('New Testament'),
+                        initiallyExpanded: selectedBook?.isNewTestament ?? false,
+                        children: [
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: books.where((book) => book.isNewTestament).map((book) {
+                              final isSelected = selectedBook?.id == book.id;
+                              return FilterChip(
+                                label: Text(book.name),
+                                selected: isSelected,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    selectedBook = book;
+                                    selectedChapter = null;
+                                    chapters.clear();
+                                  });
+                                  _loadChapters(selectedBible!.id, book.id);
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ),
+                    ] else if (isLoading) ...[
+                      const Center(child: CircularProgressIndicator()),
+                    ] else ...[
+                      const Center(child: Text('No books available')),
                     ],
-                  ),
-                  
-                  // New Testament
-                  ExpansionTile(
-                    title: const Text('New Testament'),
-                    initiallyExpanded: newTestamentBooks.contains(selectedBook),
-                    children: [
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: newTestamentBooks.map((book) {
-                          final isSelected = selectedBook == book;
-                          return FilterChip(
-                            label: Text(book),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              setState(() {
-                                selectedBook = book;
-                                selectedChapter = 1;
-                              });
-                            },
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Chapter Selection
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            // Chapter Selection
+            if (selectedBook != null) ...[
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.format_list_numbered,
-                        color: Theme.of(context).colorScheme.primary,
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.format_list_numbered,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            selectedChapter != null 
+                                ? 'Chapter ${selectedChapter!.chapterNumber}'
+                                : 'Select Chapter',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Chapter $selectedChapter',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                      const SizedBox(height: 16),
+                      
+                      if (chapters.isNotEmpty) ...[
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: chapters.map((chapter) {
+                            final isSelected = selectedChapter?.id == chapter.id;
+                            return FilterChip(
+                              label: Text('Chapter ${chapter.chapterNumber}'),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                setState(() {
+                                  selectedChapter = chapter;
+                                });
+                              },
+                            );
+                          }).toList(),
                         ),
-                      ),
+                      ],
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Slider(
-                    value: selectedChapter.toDouble(),
-                    min: 1,
-                    max: _getMaxChapters(selectedBook).toDouble(),
-                    divisions: _getMaxChapters(selectedBook) - 1,
-                    label: 'Chapter $selectedChapter',
-                    onChanged: (value) {
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Start Reading Button
+              if (selectedChapter != null)
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    if (selectedBible != null && selectedChapter != null) {
+                      await _loadChapterContent(selectedBible!.id, selectedChapter!.id);
                       setState(() {
-                        selectedChapter = value.round();
+                        isReading = true;
                       });
-                    },
+                    }
+                  },
+                  icon: const Icon(Icons.play_arrow),
+                  label: Text('Start Reading ${selectedBook!.name} Chapter ${selectedChapter!.chapterNumber}'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Chapter 1'),
-                      Text('Chapter ${_getMaxChapters(selectedBook)}'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 32),
-
-          // Start Reading Button
-          ElevatedButton.icon(
-            onPressed: () {
-              setState(() {
-                isReading = true;
-              });
-            },
-            icon: const Icon(Icons.play_arrow),
-            label: Text('Start Reading $selectedBook $selectedChapter'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
-            ),
-          ),
+                ),
+              
+            ],
+          ],
         ],
       ),
     );
@@ -313,7 +478,7 @@ class _BiblePageState extends State<BiblePage> {
               ),
               Expanded(
                 child: Text(
-                  '$selectedBook $selectedChapter ($selectedVersion)',
+                  '${selectedBook?.name ?? ''} Chapter ${selectedChapter?.chapterNumber ?? ''} (${selectedBible?.abbreviation ?? ''})',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -335,16 +500,55 @@ class _BiblePageState extends State<BiblePage> {
         
         // Bible Text
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Demo Bible text - In a real app, this would come from an API
-                _buildBibleText(),
-              ],
-            ),
-          ),
+          child: isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : errorMessage != null
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error loading content',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              if (selectedBible != null && selectedChapter != null) {
+                                _loadChapterContent(selectedBible!.id, selectedChapter!.id);
+                              }
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (chapterContent.isNotEmpty)
+                            _buildBibleText()
+                          else
+                            const Center(
+                              child: Text('No content available'),
+                            ),
+                        ],
+                      ),
+                    ),
         ),
         
         // Navigation Controls
@@ -355,23 +559,19 @@ class _BiblePageState extends State<BiblePage> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               OutlinedButton.icon(
-                onPressed: selectedChapter > 1 ? () {
-                  setState(() {
-                    selectedChapter--;
-                  });
+                onPressed: _canGoToPreviousChapter() ? () {
+                  _goToPreviousChapter();
                 } : null,
                 icon: const Icon(Icons.arrow_back),
                 label: const Text('Previous'),
               ),
               Text(
-                'Chapter $selectedChapter',
+                'Chapter ${selectedChapter?.chapterNumber ?? ''}',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               OutlinedButton.icon(
-                onPressed: selectedChapter < _getMaxChapters(selectedBook) ? () {
-                  setState(() {
-                    selectedChapter++;
-                  });
+                onPressed: _canGoToNextChapter() ? () {
+                  _goToNextChapter();
                 } : null,
                 icon: const Icon(Icons.arrow_forward),
                 label: const Text('Next'),
@@ -384,60 +584,58 @@ class _BiblePageState extends State<BiblePage> {
   }
 
   Widget _buildBibleText() {
-    // Demo content - In a real app, this would be fetched from a Bible API
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (int i = 1; i <= 20; i++)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: RichText(
-              text: TextSpan(
-                style: TextStyle(
-                  fontSize: 18,
-                  height: 1.6,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                children: [
-                  TextSpan(
-                    text: '$i ',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                      fontSize: 14,
-                    ),
-                  ),
-                  TextSpan(
-                    text: _getDemoVerse(selectedBook, selectedChapter, i),
-                  ),
-                ],
-              ),
-            ),
-          ),
-      ],
+    return Text(
+      chapterContent,
+      style: TextStyle(
+        fontSize: 18,
+        height: 1.6,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
     );
   }
 
-  int _getMaxChapters(String book) {
-    // Simplified chapter counts - in a real app, this would be more comprehensive
-    final chapterCounts = {
-      'Genesis': 50, 'Exodus': 40, 'Matthew': 28, 'Mark': 16, 
-      'Luke': 24, 'John': 21, 'Acts': 28, 'Romans': 16,
-      'Psalms': 150, 'Proverbs': 31, 'Isaiah': 66, 'Jeremiah': 52,
-    };
-    return chapterCounts[book] ?? 25; // Default to 25 if not specified
+  // Navigation helper methods
+  bool _canGoToPreviousChapter() {
+    if (selectedChapter == null || chapters.isEmpty) return false;
+    final currentIndex = chapters.indexWhere((c) => c.id == selectedChapter!.id);
+    return currentIndex > 0;
   }
 
-  String _getDemoVerse(String book, int chapter, int verse) {
-    // Demo verses - In a real app, this would come from a Bible API
-    if (book == 'Genesis' && chapter == 1) {
-      switch (verse) {
-        case 1: return 'In the beginning God created the heavens and the earth.';
-        case 2: return 'Now the earth was formless and empty, darkness was over the surface of the deep, and the Spirit of God was hovering over the waters.';
-        case 3: return 'And God said, "Let there be light," and there was light.';
-        default: return 'This is a demo verse from $book $chapter:$verse. In a real app, this would be the actual Bible text from your chosen version.';
-      }
+  bool _canGoToNextChapter() {
+    if (selectedChapter == null || chapters.isEmpty) return false;
+    final currentIndex = chapters.indexWhere((c) => c.id == selectedChapter!.id);
+    return currentIndex < chapters.length - 1;
+  }
+
+  void _goToPreviousChapter() {
+    if (!_canGoToPreviousChapter()) return;
+    
+    final currentIndex = chapters.indexWhere((c) => c.id == selectedChapter!.id);
+    final previousChapter = chapters[currentIndex - 1];
+    
+    setState(() {
+      selectedChapter = previousChapter;
+      chapterContent = '';
+    });
+    
+    if (selectedBible != null) {
+      _loadChapterContent(selectedBible!.id, previousChapter.id);
     }
-    return 'This is a demo verse from $book $chapter:$verse ($selectedVersion). In a real app, this would connect to a Bible API to display the actual scripture text.';
+  }
+
+  void _goToNextChapter() {
+    if (!_canGoToNextChapter()) return;
+    
+    final currentIndex = chapters.indexWhere((c) => c.id == selectedChapter!.id);
+    final nextChapter = chapters[currentIndex + 1];
+    
+    setState(() {
+      selectedChapter = nextChapter;
+      chapterContent = '';
+    });
+    
+    if (selectedBible != null) {
+      _loadChapterContent(selectedBible!.id, nextChapter.id);
+    }
   }
 }
