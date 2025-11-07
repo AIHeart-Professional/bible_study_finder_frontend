@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/church.dart';
+import '../models/church/church.dart';
 
 class ChurchCard extends StatelessWidget {
   final Church church;
@@ -163,7 +163,7 @@ class ChurchCard extends StatelessWidget {
                     '• ${serviceTime.displayText}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-                )).toList(),
+                )),
                 if (church.serviceTimes.length > 2)
                   Text(
                     '• +${church.serviceTimes.length - 2} more',
@@ -453,7 +453,7 @@ class _ChurchDetailsModal extends StatelessWidget {
                             ),
                           ],
                         ),
-                      )).toList(),
+                      )),
 
                       const SizedBox(height: 24),
 

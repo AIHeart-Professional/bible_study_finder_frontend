@@ -1,0 +1,387 @@
+---
+alwaysApply: true
+---
+
+# Frontend Architecture Rules
+
+This Flutter/Dart frontend MUST strictly follow a clean architecture pattern with a clear separation of concerns and unidirectional data flow.
+
+## Required File Structure
+
+The frontend MUST follow this exact structure:
+
+```
+bible_study_finder_frontend/
+├── bible_study_finder/
+│   ├── lib/
+│   │   ├── main.dart                    # Application entry point
+│   │   ├── models/                      # Data models (domain-specific)
+│   │   │   ├── bible/
+│   │   │   │   └── bible.dart
+│   │   │   ├── church/
+│   │   │   │   └── church.dart
+│   │   │   ├── group/
+│   │   │   │   ├── bible_study_group.dart
+│   │   │   │   ├── search_criteria.dart
+│   │   │   │   └── user_group_membership.dart
+│   │   │   ├── home/
+│   │   │   │   └── app_feature.dart
+│   │   │   └── study/
+│   │   │       └── study_plan.dart
+│   │   ├── pages/                       # UI pages (domain-specific)
+│   │   │   ├── bible/
+│   │   │   │   └── bible_page.dart
+│   │   │   ├── churches/
+│   │   │   │   └── churches_page.dart
+│   │   │   ├── groups/
+│   │   │   │   ├── my_groups_page.dart
+│   │   │   │   └── search_page.dart
+│   │   │   ├── home/
+│   │   │   │   ├── home_page.dart
+│   │   │   │   └── about_page.dart
+│   │   │   └── study/
+│   │   │       └── study_page.dart
+│   │   ├── services/                    # Business logic and API layer
+│   │   │   ├── bible_service.dart
+│   │   │   ├── church_service.dart
+│   │   │   ├── group_service.dart
+│   │   │   ├── membership_service.dart
+│   │   │   └── study_plan_service.dart
+│   │   ├── widgets/                     # Reusable UI components
+│   │   │   ├── church_card.dart
+│   │   │   └── study_group_card.dart
+│   │   ├── navigation/                  # Navigation and routing
+│   │   │   ├── app_router.dart
+│   │   │   └── navbar.dart
+│   │   └── utils/                       # Utility functions
+│   │       ├── app_config.dart
+│   │       └── platform_helper.dart
+│   ├── pubspec.yaml                     # Dependencies
+│   └── README.md                        # Documentation
+```
+
+## Architecture Layers
+
+### 1. Pages (UI Layer)
+- **Location**: `lib/pages/{domain}/`
+- **Purpose**: Define user interface screens and handle user interactions
+- **Responsibilities**:
+  - Build Flutter widgets and UI layouts
+  - Handle user input and gestures
+  - Call service methods to fetch/update data
+  - Manage local state using StatefulWidget or state management
+  - Display data from models
+  - Handle navigation between pages
+
+### 2. Services (Business Logic Layer)
+- **Location**: `lib/services/`
+- **Purpose**: Implement business logic and API communication
+- **Responsibilities**:
+  - Make HTTP requests to backend APIs
+  - Transform API responses to domain models
+  - Implement caching strategies
+  - Handle error handling and retry logic
+  - Provide static methods or singleton instances for data access
+  - Validate data before sending to APIs
+
+### 3. Models (Data Layer)
+- **Location**: `lib/models/{domain}/`
+- **Purpose**: Define data structures and domain entities
+- **Responsibilities**:
+  - Define data classes with properties
+  - Implement `fromJson` factory constructors for deserialization
+  - Implement `toJson` methods for serialization
+  - Provide computed properties and helper methods
+  - Validate data integrity
+
+### 4. Widgets (Reusable UI Components)
+- **Location**: `lib/widgets/`
+- **Purpose**: Create reusable UI components
+- **Responsibilities**:
+  - Build reusable Flutter widgets
+  - Accept data through constructor parameters
+  - Handle user interactions and emit callbacks
+  - Maintain component-specific state if needed
+  - Follow Material Design guidelines
+
+### 5. Navigation (Routing Layer)
+- **Location**: `lib/navigation/`
+- **Purpose**: Manage app navigation and routing
+- **Responsibilities**:
+  - Define route constants
+  - Configure navigation structure
+  - Handle deep linking
+  - Manage navigation state
+
+### 6. Utils (Utility Layer)
+- **Location**: `lib/utils/`
+- **Purpose**: Provide shared utility functions and configuration
+- **Responsibilities**:
+  - Store app configuration (API URLs, keys, etc.)
+  - Provide helper functions (platform detection, formatting, etc.)
+  - Handle environment-specific settings
+  - Provide constants and enums
+
+## Strict Call Hierarchy (MANDATORY)
+
+The call flow MUST ALWAYS follow this unidirectional hierarchy:
+
+```
+Pages → Services → Backend API
+Pages → Widgets
+Pages → Models
+Widgets → Models
+Services → Models
+```
+
+### ALLOWED Calls:
+- ✅ **Pages** CAN call **Services** to fetch/update data
+- ✅ **Pages** CAN use **Models** for data display
+- ✅ **Pages** CAN use **Widgets** for UI composition
+- ✅ **Pages** CAN use **Navigation** for routing
+- ✅ **Widgets** CAN use **Models** for data display
+- ✅ **Widgets** CAN accept callbacks from **Pages**
+- ✅ **Services** CAN use **Models** for data transformation
+- ✅ **Services** CAN make HTTP requests to backend APIs
+- ✅ **Services** CAN use **Utils** for configuration
+- ✅ Any layer CAN use **Utils** for shared utilities
+
+### FORBIDDEN Calls (Strictly Prohibited):
+- ❌ **Pages** CANNOT make direct HTTP requests (must use Services)
+- ❌ **Widgets** CANNOT call **Services** directly (must receive data via parameters)
+- ❌ **Models** CANNOT call **Services** or make HTTP requests
+- ❌ **Services** CANNOT directly manipulate UI or call **Pages**
+- ❌ **No reverse calls** - Lower layers CANNOT call higher layers
+- ❌ **Services** CANNOT depend on Flutter-specific UI classes (except for HTTP client)
+
+## Naming Conventions
+
+- **Pages**: `{domain}_page.dart` (e.g., `bible_page.dart`, `churches_page.dart`)
+- **Services**: `{domain}_service.dart` (e.g., `bible_service.dart`, `group_service.dart`)
+- **Models**: `{domain}.dart` or `{entity}.dart` (e.g., `bible.dart`, `bible_study_group.dart`)
+- **Widgets**: `{name}_card.dart` or `{name}_widget.dart` (e.g., `church_card.dart`, `study_group_card.dart`)
+- **Navigation**: `app_router.dart`, `navbar.dart`
+- **Utils**: `{purpose}_helper.dart` or `app_config.dart` (e.g., `platform_helper.dart`, `app_config.dart`)
+
+## Example Implementation Pattern
+
+### Page Example:
+```dart
+// lib/pages/bible/bible_page.dart
+class BiblePage extends StatefulWidget {
+  @override
+  State<BiblePage> createState() => _BiblePageState();
+}
+
+class _BiblePageState extends State<BiblePage> {
+  List<Bible> _bibles = [];
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadBibles();
+  }
+  
+  Future<void> _loadBibles() async {
+    final bibles = await BibleService.getBibles();
+    setState(() => _bibles = bibles);
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: ListView.builder(
+        itemCount: _bibles.length,
+        itemBuilder: (context, index) => BibleCard(bible: _bibles[index]),
+      ),
+    );
+  }
+}
+```
+
+### Service Example:
+```dart
+// lib/services/bible_service.dart
+class BibleService {
+  static const String _baseUrl = AppConfig.bibleApiUrl;
+  
+  static Future<List<Bible>> getBibles() async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/bibles'),
+      headers: {'api-key': AppConfig.bibleApiKey},
+    );
+    
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      return (jsonData['data'] as List)
+          .map((item) => Bible.fromJson(item))
+          .toList();
+    }
+    throw Exception('Failed to load bibles');
+  }
+}
+```
+
+### Model Example:
+```dart
+// lib/models/bible/bible.dart
+class Bible {
+  final String id;
+  final String name;
+  final String abbreviation;
+  
+  Bible({
+    required this.id,
+    required this.name,
+    required this.abbreviation,
+  });
+  
+  factory Bible.fromJson(Map<String, dynamic> json) {
+    return Bible(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      abbreviation: json['abbreviation'] ?? '',
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'abbreviation': abbreviation,
+    };
+  }
+}
+```
+
+### Widget Example:
+```dart
+// lib/widgets/bible_card.dart
+class BibleCard extends StatelessWidget {
+  final Bible bible;
+  
+  const BibleCard({required this.bible});
+  
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        title: Text(bible.name),
+        subtitle: Text(bible.abbreviation),
+      ),
+    );
+  }
+}
+```
+
+## State Management Guidelines
+
+- Use `StatefulWidget` for local component state
+- For complex state management, consider using Provider, Riverpod, or Bloc
+- Services should be stateless (use static methods or singleton pattern)
+- Avoid global state unless absolutely necessary
+- Keep state as close to where it's used as possible
+
+## Error Handling
+
+- **Services** MUST handle HTTP errors and throw appropriate exceptions
+- **Pages** MUST catch service exceptions and display user-friendly error messages
+- Use try-catch blocks in async methods
+- Provide fallback UI for error states
+- Log errors appropriately (use debug mode for development)
+
+## Code Organization Rules
+
+1. **ALWAYS** organize files by domain (bible, church, group, etc.)
+2. **ALWAYS** keep pages, models, and services in separate directories
+3. **ALWAYS** use domain-specific subdirectories for related files
+4. **ALWAYS** export models from domain `__init__.py` files (if using barrel exports)
+5. **ALWAYS** keep widgets reusable and independent
+6. **ALWAYS** use descriptive names for files and classes
+7. **ALWAYS** follow Dart naming conventions (lowercase_with_underscores for files, PascalCase for classes)
+
+## Function Size Rules
+
+1. **ALWAYS** keep functions to 15 lines or less
+2. **ALWAYS** extract complex logic into private helper methods
+3. **ALWAYS** have functions do EXACTLY what their name suggests
+4. **ALWAYS** break down large build methods into smaller widget methods
+5. **ALWAYS** extract repeated widget code into separate widgets
+
+## Example: Breaking Down Large Functions
+
+### Bad:
+```dart
+// BAD: Function does too much
+Future<void> _loadAndDisplayBibles() async {
+  setState(() => _isLoading = true);
+  try {
+    final response = await http.get(Uri.parse('$_baseUrl/bibles'));
+    final jsonData = json.decode(response.body);
+    final bibles = (jsonData['data'] as List)
+        .map((item) => Bible.fromJson(item))
+        .toList();
+    setState(() {
+      _bibles = bibles;
+      _isLoading = false;
+    });
+  } catch (e) {
+    setState(() {
+      _error = e.toString();
+      _isLoading = false;
+    });
+  }
+}
+```
+
+### Good:
+```dart
+// GOOD: Functions do one thing each
+Future<void> _loadBibles() async {
+  _setLoading(true);
+  try {
+    final bibles = await BibleService.getBibles();
+    _updateBibles(bibles);
+  } catch (e) {
+    _handleError(e);
+  } finally {
+    _setLoading(false);
+  }
+}
+
+void _setLoading(bool isLoading) {
+  setState(() => _isLoading = isLoading);
+}
+
+void _updateBibles(List<Bible> bibles) {
+  setState(() => _bibles = bibles);
+}
+
+void _handleError(dynamic error) {
+  setState(() => _error = error.toString());
+}
+```
+
+## Programming Languages and Tools
+
+- **Dart** (Flutter framework)
+- **HTTP** package for API calls
+- **Material Design** for UI components
+
+## Testing Guidelines
+
+- Write unit tests for services
+- Write widget tests for reusable widgets
+- Write integration tests for critical user flows
+- Mock services in tests
+- Use test doubles for external dependencies
+
+## Migration Notes
+
+When refactoring existing code:
+- Move HTTP calls from pages to services
+- Extract reusable UI into widgets
+- Organize files by domain
+- Ensure pages only call services, never make direct HTTP requests
+- Ensure widgets receive data via parameters, never fetch data themselves
+- Break down large functions into smaller, focused functions

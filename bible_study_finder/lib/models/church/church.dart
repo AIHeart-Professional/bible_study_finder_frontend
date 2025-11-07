@@ -60,7 +60,7 @@ class Church {
       : '${distance.toStringAsFixed(1)} mi away';
 
   String get ratingText => rating > 0 
-      ? '${rating.toStringAsFixed(1)} (${reviewCount} reviews)'
+      ? '${rating.toStringAsFixed(1)} ($reviewCount reviews)'
       : 'No reviews yet';
 }
 

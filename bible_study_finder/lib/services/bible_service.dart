@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/bible.dart';
+import '../models/bible/bible.dart';
+import '../utils/app_config.dart';
 
 class BibleService {
-  static const String _baseUrl = 'https://api.scripture.api.bible/v1';
-  static const String _apiKey = 'd91bb5cc08f6b1625b9c8fc4f47e8d4e'; // Replace with your actual API key
+  static const String _baseUrl = AppConfig.bibleApiUrl;
+  static const String _apiKey = AppConfig.bibleApiKey;
   
   // Cache for frequently accessed data
   static List<Bible>? _biblesCache;

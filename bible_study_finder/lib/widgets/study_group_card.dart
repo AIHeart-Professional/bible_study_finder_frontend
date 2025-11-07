@@ -1,13 +1,91 @@
 import 'package:flutter/material.dart';
-import '../models/bible_study_group.dart';
+import '../models/group/bible_study_group.dart';
+import '../services/membership_service.dart';
 
-class StudyGroupCard extends StatelessWidget {
+class StudyGroupCard extends StatefulWidget {
   final BibleStudyGroup group;
+  final VoidCallback? onMembershipChanged;
 
   const StudyGroupCard({
     super.key,
     required this.group,
+    this.onMembershipChanged,
   });
+
+  @override
+  State<StudyGroupCard> createState() => _StudyGroupCardState();
+}
+
+class _StudyGroupCardState extends State<StudyGroupCard> {
+  bool _isMember = false;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkMembership();
+  }
+
+  Future<void> _checkMembership() async {
+    try {
+      final isMember = await MembershipService.isMemberOfGroup(widget.group.id);
+      if (mounted) {
+        setState(() {
+          _isMember = isMember;
+        });
+      }
+    } catch (e) {
+      // Handle error silently for now
+    }
+  }
+
+  Future<void> _joinGroup() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final success = await MembershipService.joinGroup(widget.group.id);
+      if (success) {
+        setState(() {
+          _isMember = true;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Successfully joined ${widget.group.name}!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+        widget.onMembershipChanged?.call();
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('You are already a member of this group'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error joining group: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +124,7 @@ class StudyGroupCard extends StatelessWidget {
               children: [
                 // Group Name
                 Text(
-                  group.name,
+                  widget.group.name,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -55,7 +133,7 @@ class StudyGroupCard extends StatelessWidget {
 
                 // Description
                 Text(
-                  group.description,
+                  widget.group.description,
                   style: Theme.of(context).textTheme.bodyMedium,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
@@ -67,25 +145,25 @@ class StudyGroupCard extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 4,
                   children: [
-                    if (group.isOnline)
+                    if (widget.group.isOnline)
                       _FeatureChip(
                         icon: Icons.computer,
                         label: 'Online',
                         color: Colors.blue,
                       ),
-                    if (group.isInPerson)
+                    if (widget.group.isInPerson)
                       _FeatureChip(
                         icon: Icons.location_on,
                         label: 'In-Person',
                         color: Colors.green,
                       ),
-                    if (group.isChildcareAvailable)
+                    if (widget.group.isChildcareAvailable)
                       _FeatureChip(
                         icon: Icons.child_care,
                         label: 'Childcare',
                         color: Colors.pink,
                       ),
-                    if (group.isBeginnersWelcome)
+                    if (widget.group.isBeginnersWelcome)
                       _FeatureChip(
                         icon: Icons.star,
                         label: 'Beginners Welcome',
@@ -100,28 +178,28 @@ class StudyGroupCard extends StatelessWidget {
                   children: [
                     _DetailRow(
                       icon: Icons.location_on,
-                      text: group.location,
+                      text: widget.group.location,
                     ),
                     const SizedBox(height: 8),
                     _DetailRow(
                       icon: Icons.calendar_today,
-                      text: '${group.meetingDay}s, ${group.meetingTime}',
+                      text: '${widget.group.meetingDay}s, ${widget.group.meetingTime}',
                     ),
                     const SizedBox(height: 8),
                     _DetailRow(
                       icon: Icons.people,
-                      text: '${group.groupSize} members • ${group.ageGroup}',
+                      text: '${widget.group.groupSize} members • ${widget.group.ageGroup}',
                     ),
                     const SizedBox(height: 8),
                     _DetailRow(
                       icon: Icons.language,
-                      text: '${group.language} • ${group.studyType}',
+                      text: '${widget.group.language} • ${widget.group.studyType}',
                     ),
-                    if (group.distance > 0) ...[
+                    if (widget.group.distance > 0) ...[
                       const SizedBox(height: 8),
                       _DetailRow(
                         icon: Icons.directions_car,
-                        text: '${group.distance} miles away',
+                        text: '${widget.group.distance} miles away',
                       ),
                     ],
                   ],
@@ -136,7 +214,7 @@ class StudyGroupCard extends StatelessWidget {
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Joining ${group.name}...'),
+                              content: Text('Joining ${widget.group.name}...'),
                               duration: const Duration(seconds: 2),
                             ),
                           );
@@ -194,7 +272,7 @@ class StudyGroupCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  group.name,
+                  widget.group.name,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -208,7 +286,7 @@ class StudyGroupCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  group.description,
+                  widget.group.description,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 16),
@@ -219,22 +297,22 @@ class StudyGroupCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                _DetailRow(icon: Icons.location_on, text: group.location),
+                _DetailRow(icon: Icons.location_on, text: widget.group.location),
                 const SizedBox(height: 8),
-                _DetailRow(icon: Icons.calendar_today, text: '${group.meetingDay}s'),
+                _DetailRow(icon: Icons.calendar_today, text: '${widget.group.meetingDay}s'),
                 const SizedBox(height: 8),
-                _DetailRow(icon: Icons.access_time, text: group.meetingTime),
+                _DetailRow(icon: Icons.access_time, text: widget.group.meetingTime),
                 const SizedBox(height: 8),
-                _DetailRow(icon: Icons.book, text: group.studyType),
+                _DetailRow(icon: Icons.book, text: widget.group.studyType),
                 const SizedBox(height: 8),
-                _DetailRow(icon: Icons.people, text: '${group.groupSize} members'),
+                _DetailRow(icon: Icons.people, text: '${widget.group.groupSize} members'),
                 const SizedBox(height: 8),
-                _DetailRow(icon: Icons.group, text: group.ageGroup),
+                _DetailRow(icon: Icons.group, text: widget.group.ageGroup),
                 const SizedBox(height: 8),
-                _DetailRow(icon: Icons.language, text: group.language),
-                if (group.distance > 0) ...[
+                _DetailRow(icon: Icons.language, text: widget.group.language),
+                if (widget.group.distance > 0) ...[
                   const SizedBox(height: 8),
-                  _DetailRow(icon: Icons.directions_car, text: '${group.distance} miles away'),
+                  _DetailRow(icon: Icons.directions_car, text: '${widget.group.distance} miles away'),
                 ],
                 const SizedBox(height: 24),
                 SizedBox(
@@ -244,7 +322,7 @@ class StudyGroupCard extends StatelessWidget {
                       Navigator.of(context).pop();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Joining ${group.name}...'),
+                          content: Text('Joining ${widget.group.name}...'),
                           duration: const Duration(seconds: 2),
                         ),
                       );

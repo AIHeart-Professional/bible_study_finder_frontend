@@ -184,4 +184,3 @@ class BibleResponse<T> {
     );
   }
 }
-
