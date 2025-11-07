@@ -263,21 +263,34 @@ class ChurchService {
     await Future.delayed(const Duration(milliseconds: 50));
 
     List<Church> results = List.from(_placeholderChurches);
-
-    if (denomination != null && denomination.isNotEmpty) {
-      results = results
-          .where((church) => church.denomination
-              .toLowerCase()
-              .contains(denomination.toLowerCase()))
-          .toList();
-    }
-
-    results =
-        results.where((church) => church.distance <= maxDistance).toList();
-
-    results.sort((a, b) => a.distance.compareTo(b.distance));
+    results = _filterByDenomination(results, denomination);
+    results = _filterByDistance(results, maxDistance);
+    results = _sortByDistance(results);
 
     return results;
+  }
+
+  static List<Church> _filterByDenomination(
+      List<Church> churches, String? denomination) {
+    if (denomination == null || denomination.isEmpty) {
+      return churches;
+    }
+    final denomLower = denomination.toLowerCase();
+    return churches
+        .where((church) =>
+            church.denomination.toLowerCase().contains(denomLower))
+        .toList();
+  }
+
+  static List<Church> _filterByDistance(
+      List<Church> churches, double maxDistance) {
+    return churches.where((church) => church.distance <= maxDistance).toList();
+  }
+
+  static List<Church> _sortByDistance(List<Church> churches) {
+    final sorted = List<Church>.from(churches);
+    sorted.sort((a, b) => a.distance.compareTo(b.distance));
+    return sorted;
   }
 
   static List<String> getDenominationOptions() {
@@ -310,4 +323,3 @@ class ChurchService {
     ];
   }
 }
-

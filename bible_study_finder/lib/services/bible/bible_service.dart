@@ -14,70 +14,93 @@ class BibleService {
 
     try {
       final bibleResponse = await BibleApi.getBiblesApi();
-
       final englishBibles = _filterEnglishBibles(bibleResponse.data);
-      englishBibles.sort((a, b) => a.name.compareTo(b.name));
-
-      _biblesCache = englishBibles;
-      return _biblesCache!;
+      final sortedBibles = _sortBiblesByName(englishBibles);
+      _cacheBibles(sortedBibles);
+      return sortedBibles;
     } catch (e) {
       throw Exception('Error fetching bibles: $e');
     }
   }
 
+  static void _cacheBibles(List<Bible> bibles) {
+    _biblesCache = bibles;
+  }
+
+  static List<Bible> _sortBiblesByName(List<Bible> bibles) {
+    final sorted = List<Bible>.from(bibles);
+    sorted.sort((a, b) => a.name.compareTo(b.name));
+    return sorted;
+  }
+
   static List<Bible> _filterEnglishBibles(List<Bible> bibles) {
-    return bibles.where((bible) {
-      final isEnglishByLanguage = bible.language.toLowerCase().contains('english') ||
-          bible.language.toLowerCase().contains('eng');
+    return bibles.where((bible) => _isEnglishBible(bible)).toList();
+  }
 
-      final popularEnglishIds = getPopularBibleIds();
-      final isPopularEnglish = popularEnglishIds.contains(bible.id);
+  static bool _isEnglishBible(Bible bible) {
+    return _isEnglishByLanguage(bible) ||
+        _isPopularEnglishBible(bible) ||
+        _isEnglishByName(bible) ||
+        _isEnglishByAbbreviation(bible);
+  }
 
-      final popularEnglishNames = getPopularEnglishBibleNames();
-      final isPopularEnglishName = popularEnglishNames.any((name) =>
-          bible.name.toLowerCase().contains(name.toLowerCase()));
+  static bool _isEnglishByLanguage(Bible bible) {
+    final language = bible.language.toLowerCase();
+    return language.contains('english') || language.contains('eng');
+  }
 
-      final englishAbbreviations = [
-        'NIV',
-        'ESV',
-        'NASB',
-        'KJV',
-        'NLT',
-        'CSB',
-        'NKJV',
-        'MSG',
-        'NRSV',
-        'RSV',
-        'ASV',
-        'AMP',
-        'CEV',
-        'GNV',
-        'HCSB',
-        'ICB',
-        'ISV',
-        'LEB',
-        'MEV',
-        'NABRE',
-        'NCV',
-        'NET',
-        'NIRV',
-        'NJB',
-        'NLV',
-        'TLB',
-        'VOICE',
-        'WEB',
-        'WYC',
-        'YLT'
-      ];
-      final isEnglishByAbbreviation = englishAbbreviations.any((abbr) =>
-          bible.abbreviation.toUpperCase().contains(abbr) ||
-          bible.name.toUpperCase().contains(abbr));
+  static bool _isPopularEnglishBible(Bible bible) {
+    final popularIds = getPopularBibleIds();
+    return popularIds.contains(bible.id);
+  }
 
-      return isEnglishByLanguage ||
-          isPopularEnglish ||
-          isPopularEnglishName ||
-          isEnglishByAbbreviation;
-    }).toList();
+  static bool _isEnglishByName(Bible bible) {
+    final popularNames = getPopularEnglishBibleNames();
+    final bibleName = bible.name.toLowerCase();
+    return popularNames.any((name) => bibleName.contains(name.toLowerCase()));
+  }
+
+  static bool _isEnglishByAbbreviation(Bible bible) {
+    final abbreviations = _getEnglishAbbreviations();
+    final bibleAbbr = bible.abbreviation.toUpperCase();
+    final bibleName = bible.name.toUpperCase();
+    return abbreviations.any((abbr) =>
+        bibleAbbr.contains(abbr) || bibleName.contains(abbr));
+  }
+
+  static List<String> _getEnglishAbbreviations() {
+    return [
+      'NIV',
+      'ESV',
+      'NASB',
+      'KJV',
+      'NLT',
+      'CSB',
+      'NKJV',
+      'MSG',
+      'NRSV',
+      'RSV',
+      'ASV',
+      'AMP',
+      'CEV',
+      'GNV',
+      'HCSB',
+      'ICB',
+      'ISV',
+      'LEB',
+      'MEV',
+      'NABRE',
+      'NCV',
+      'NET',
+      'NIRV',
+      'NJB',
+      'NLV',
+      'TLB',
+      'VOICE',
+      'WEB',
+      'WYC',
+      'YLT'
+    ];
   }
 
   static Future<List<Book>> getBooks(String bibleId) async {
@@ -87,32 +110,43 @@ class BibleService {
 
     try {
       final bookResponse = await BibleApi.getBooksApi(bibleId);
-      _booksCache[bibleId] = bookResponse.data;
+      _cacheBooks(bibleId, bookResponse.data);
       return _booksCache[bibleId]!;
     } catch (e) {
       throw Exception('Error fetching books: $e');
     }
   }
 
+  static void _cacheBooks(String bibleId, List<Book> books) {
+    _booksCache[bibleId] = books;
+  }
+
   static Future<List<Chapter>> getChapters(String bibleId, String bookId) async {
-    final cacheKey = '$bibleId-$bookId';
+    final cacheKey = _buildChapterCacheKey(bibleId, bookId);
     if (_chaptersCache.containsKey(cacheKey)) {
       return _chaptersCache[cacheKey]!;
     }
 
     try {
-      final chapterResponse =
-          await BibleApi.getChaptersApi(bibleId, bookId);
-      _chaptersCache[cacheKey] = chapterResponse.data;
+      final chapterResponse = await BibleApi.getChaptersApi(bibleId, bookId);
+      _cacheChapters(cacheKey, chapterResponse.data);
       return _chaptersCache[cacheKey]!;
     } catch (e) {
       throw Exception('Error fetching chapters: $e');
     }
   }
 
+  static String _buildChapterCacheKey(String bibleId, String bookId) {
+    return '$bibleId-$bookId';
+  }
+
+  static void _cacheChapters(String cacheKey, List<Chapter> chapters) {
+    _chaptersCache[cacheKey] = chapters;
+  }
+
   static Future<String> getChapterContent(
       String bibleId, String chapterId) async {
-    final cacheKey = '$bibleId-$chapterId';
+    final cacheKey = _buildContentCacheKey(bibleId, chapterId);
     if (_chapterContentCache.containsKey(cacheKey)) {
       return _chapterContentCache[cacheKey]!;
     }
@@ -120,11 +154,44 @@ class BibleService {
     try {
       final content = await BibleApi.getChapterContentApi(bibleId, chapterId);
       final cleanContent = _cleanHtmlContent(content);
-      _chapterContentCache[cacheKey] = cleanContent;
+      _cacheChapterContent(cacheKey, cleanContent);
       return cleanContent;
     } catch (e) {
       throw Exception('Error fetching chapter content: $e');
     }
+  }
+
+  static String _buildContentCacheKey(String bibleId, String chapterId) {
+    return '$bibleId-$chapterId';
+  }
+
+  static void _cacheChapterContent(String cacheKey, String content) {
+    _chapterContentCache[cacheKey] = content;
+  }
+
+  static String _cleanHtmlContent(String htmlContent) {
+    final withoutTags = _removeHtmlTags(htmlContent);
+    final withoutEntities = _decodeHtmlEntities(withoutTags);
+    return _normalizeWhitespace(withoutEntities);
+  }
+
+  static String _removeHtmlTags(String html) {
+    return html.replaceAll(RegExp(r'<[^>]*>'), '');
+  }
+
+  static String _decodeHtmlEntities(String html) {
+    return html
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'")
+        .trim();
+  }
+
+  static String _normalizeWhitespace(String text) {
+    return text.replaceAll(RegExp(r'\s+'), ' ');
   }
 
   static Future<List<Verse>> getVerses(String bibleId, String chapterId) async {
@@ -134,22 +201,6 @@ class BibleService {
     } catch (e) {
       throw Exception('Error fetching verses: $e');
     }
-  }
-
-  static String _cleanHtmlContent(String htmlContent) {
-    String cleaned = htmlContent
-        .replaceAll(RegExp(r'<[^>]*>'), '')
-        .replaceAll('&nbsp;', ' ')
-        .replaceAll('&amp;', '&')
-        .replaceAll('&lt;', '<')
-        .replaceAll('&gt;', '>')
-        .replaceAll('&quot;', '"')
-        .replaceAll('&#39;', "'")
-        .trim();
-
-    cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ');
-
-    return cleaned;
   }
 
   static void clearCache() {
@@ -211,13 +262,16 @@ class BibleService {
   static Future<Bible?> getBibleById(String bibleId) async {
     try {
       final bibles = await getBibles();
-      return bibles.firstWhere(
-        (bible) => bible.id == bibleId,
-        orElse: () => bibles.first,
-      );
+      return _findBibleById(bibles, bibleId);
     } catch (e) {
       return null;
     }
   }
-}
 
+  static Bible? _findBibleById(List<Bible> bibles, String bibleId) {
+    return bibles.firstWhere(
+      (bible) => bible.id == bibleId,
+      orElse: () => bibles.first,
+    );
+  }
+}

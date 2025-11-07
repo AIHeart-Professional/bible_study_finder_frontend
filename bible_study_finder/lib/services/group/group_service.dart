@@ -183,75 +183,110 @@ class GroupService {
     await Future.delayed(const Duration(milliseconds: 100));
 
     List<BibleStudyGroup> filteredGroups = List.from(_placeholderGroups);
-
-    if (criteria.isOnline && !criteria.isInPerson) {
-      filteredGroups =
-          filteredGroups.where((group) => group.isOnline).toList();
-    } else if (!criteria.isOnline && criteria.isInPerson) {
-      filteredGroups =
-          filteredGroups.where((group) => group.isInPerson).toList();
-    }
-
-    if (criteria.studyType.isNotEmpty) {
-      filteredGroups = filteredGroups
-          .where((group) =>
-              group.studyType
-                  ?.toLowerCase()
-                  .contains(criteria.studyType.toLowerCase()) ??
-              false)
-          .toList();
-    }
-
-    if (criteria.meetingDay.isNotEmpty) {
-      filteredGroups = filteredGroups
-          .where((group) =>
-              group.meetingDay?.toLowerCase() ==
-              criteria.meetingDay.toLowerCase())
-          .toList();
-    }
-
-    if (criteria.language.isNotEmpty) {
-      filteredGroups = filteredGroups
-          .where((group) =>
-              group.language?.toLowerCase() ==
-              criteria.language.toLowerCase())
-          .toList();
-    }
-
-    if (criteria.maxDistance > 0) {
-      filteredGroups = filteredGroups
-          .where((group) => group.distance <= criteria.maxDistance)
-          .toList();
-    }
-
-    if (criteria.groupSize > 0) {
-      filteredGroups = filteredGroups
-          .where((group) => (group.groupSize ?? 0) <= criteria.groupSize)
-          .toList();
-    }
-
-    if (criteria.isChildcareAvailable) {
-      filteredGroups = filteredGroups
-          .where((group) => group.isChildcareAvailable)
-          .toList();
-    }
-
-    if (criteria.isBeginnersWelcome) {
-      filteredGroups = filteredGroups
-          .where((group) => group.isBeginnersWelcome)
-          .toList();
-    }
-
-    if (criteria.searchTerm.trim().isNotEmpty) {
-      final searchTerm = criteria.searchTerm.toLowerCase().trim();
-      filteredGroups = filteredGroups
-          .where((group) =>
-              group.name.toLowerCase().contains(searchTerm) ||
-              group.description.toLowerCase().contains(searchTerm))
-          .toList();
-    }
+    filteredGroups = _filterByMeetingType(filteredGroups, criteria);
+    filteredGroups = _filterByStudyType(filteredGroups, criteria);
+    filteredGroups = _filterByMeetingDay(filteredGroups, criteria);
+    filteredGroups = _filterByLanguage(filteredGroups, criteria);
+    filteredGroups = _filterByDistance(filteredGroups, criteria);
+    filteredGroups = _filterByGroupSize(filteredGroups, criteria);
+    filteredGroups = _filterByChildcare(filteredGroups, criteria);
+    filteredGroups = _filterByBeginnersWelcome(filteredGroups, criteria);
+    filteredGroups = _filterBySearchTerm(filteredGroups, criteria);
 
     return filteredGroups;
+  }
+
+  static List<BibleStudyGroup> _filterByMeetingType(
+      List<BibleStudyGroup> groups, SearchCriteria criteria) {
+    if (criteria.isOnline && !criteria.isInPerson) {
+      return groups.where((group) => group.isOnline).toList();
+    } else if (!criteria.isOnline && criteria.isInPerson) {
+      return groups.where((group) => group.isInPerson).toList();
+    }
+    return groups;
+  }
+
+  static List<BibleStudyGroup> _filterByStudyType(
+      List<BibleStudyGroup> groups, SearchCriteria criteria) {
+    if (criteria.studyType.isEmpty) {
+      return groups;
+    }
+    final studyType = criteria.studyType.toLowerCase();
+    return groups
+        .where((group) =>
+            group.studyType?.toLowerCase().contains(studyType) ?? false)
+        .toList();
+  }
+
+  static List<BibleStudyGroup> _filterByMeetingDay(
+      List<BibleStudyGroup> groups, SearchCriteria criteria) {
+    if (criteria.meetingDay.isEmpty) {
+      return groups;
+    }
+    final meetingDay = criteria.meetingDay.toLowerCase();
+    return groups
+        .where((group) => group.meetingDay?.toLowerCase() == meetingDay)
+        .toList();
+  }
+
+  static List<BibleStudyGroup> _filterByLanguage(
+      List<BibleStudyGroup> groups, SearchCriteria criteria) {
+    if (criteria.language.isEmpty) {
+      return groups;
+    }
+    final language = criteria.language.toLowerCase();
+    return groups
+        .where((group) => group.language?.toLowerCase() == language)
+        .toList();
+  }
+
+  static List<BibleStudyGroup> _filterByDistance(
+      List<BibleStudyGroup> groups, SearchCriteria criteria) {
+    if (criteria.maxDistance <= 0) {
+      return groups;
+    }
+    return groups
+        .where((group) => group.distance <= criteria.maxDistance)
+        .toList();
+  }
+
+  static List<BibleStudyGroup> _filterByGroupSize(
+      List<BibleStudyGroup> groups, SearchCriteria criteria) {
+    if (criteria.groupSize <= 0) {
+      return groups;
+    }
+    return groups
+        .where((group) => (group.groupSize ?? 0) <= criteria.groupSize)
+        .toList();
+  }
+
+  static List<BibleStudyGroup> _filterByChildcare(
+      List<BibleStudyGroup> groups, SearchCriteria criteria) {
+    if (!criteria.isChildcareAvailable) {
+      return groups;
+    }
+    return groups.where((group) => group.isChildcareAvailable).toList();
+  }
+
+  static List<BibleStudyGroup> _filterByBeginnersWelcome(
+      List<BibleStudyGroup> groups, SearchCriteria criteria) {
+    if (!criteria.isBeginnersWelcome) {
+      return groups;
+    }
+    return groups.where((group) => group.isBeginnersWelcome).toList();
+  }
+
+  static List<BibleStudyGroup> _filterBySearchTerm(
+      List<BibleStudyGroup> groups, SearchCriteria criteria) {
+    final searchTerm = criteria.searchTerm.trim().toLowerCase();
+    if (searchTerm.isEmpty) {
+      return groups;
+    }
+    return groups
+        .where((group) =>
+            group.name.toLowerCase().contains(searchTerm) ||
+            group.description.toLowerCase().contains(searchTerm))
+        .toList();
   }
 
   static List<Map<String, String>> getStudyTypeOptions() {
@@ -313,4 +348,3 @@ class GroupService {
     ];
   }
 }
-
