@@ -181,20 +181,25 @@ class _StudyGroupCardState extends State<StudyGroupCard> {
                       text: widget.group.location,
                     ),
                     const SizedBox(height: 8),
-                    _DetailRow(
-                      icon: Icons.calendar_today,
-                      text: '${widget.group.meetingDay}s, ${widget.group.meetingTime}',
-                    ),
-                    const SizedBox(height: 8),
-                    _DetailRow(
-                      icon: Icons.people,
-                      text: '${widget.group.groupSize} members • ${widget.group.ageGroup}',
-                    ),
-                    const SizedBox(height: 8),
-                    _DetailRow(
-                      icon: Icons.language,
-                      text: '${widget.group.language} • ${widget.group.studyType}',
-                    ),
+                    if (widget.group.meetingDay != null || widget.group.meetingTime != null)
+                      _DetailRow(
+                        icon: Icons.calendar_today,
+                        text: '${widget.group.meetingDay ?? 'TBD'}${widget.group.meetingDay != null ? 's' : ''}${widget.group.meetingTime != null ? ', ${widget.group.meetingTime}' : ''}',
+                      ),
+                    if (widget.group.meetingDay != null || widget.group.meetingTime != null)
+                      const SizedBox(height: 8),
+                    if (widget.group.groupSize != null || widget.group.ageGroup != null)
+                      _DetailRow(
+                        icon: Icons.people,
+                        text: '${widget.group.groupSize ?? 'N/A'} members${widget.group.ageGroup != null ? ' • ${widget.group.ageGroup}' : ''}',
+                      ),
+                    if (widget.group.groupSize != null || widget.group.ageGroup != null)
+                      const SizedBox(height: 8),
+                    if (widget.group.language != null || widget.group.studyType != null)
+                      _DetailRow(
+                        icon: Icons.language,
+                        text: '${widget.group.language ?? 'N/A'}${widget.group.studyType != null ? ' • ${widget.group.studyType}' : ''}',
+                      ),
                     if (widget.group.distance > 0) ...[
                       const SizedBox(height: 8),
                       _DetailRow(
@@ -298,18 +303,30 @@ class _StudyGroupCardState extends State<StudyGroupCard> {
                 ),
                 const SizedBox(height: 12),
                 _DetailRow(icon: Icons.location_on, text: widget.group.location),
-                const SizedBox(height: 8),
-                _DetailRow(icon: Icons.calendar_today, text: '${widget.group.meetingDay}s'),
-                const SizedBox(height: 8),
-                _DetailRow(icon: Icons.access_time, text: widget.group.meetingTime),
-                const SizedBox(height: 8),
-                _DetailRow(icon: Icons.book, text: widget.group.studyType),
-                const SizedBox(height: 8),
-                _DetailRow(icon: Icons.people, text: '${widget.group.groupSize} members'),
-                const SizedBox(height: 8),
-                _DetailRow(icon: Icons.group, text: widget.group.ageGroup),
-                const SizedBox(height: 8),
-                _DetailRow(icon: Icons.language, text: widget.group.language),
+                if (widget.group.meetingDay != null) ...[
+                  const SizedBox(height: 8),
+                  _DetailRow(icon: Icons.calendar_today, text: '${widget.group.meetingDay}s'),
+                ],
+                if (widget.group.meetingTime != null) ...[
+                  const SizedBox(height: 8),
+                  _DetailRow(icon: Icons.access_time, text: widget.group.meetingTime!),
+                ],
+                if (widget.group.studyType != null) ...[
+                  const SizedBox(height: 8),
+                  _DetailRow(icon: Icons.book, text: widget.group.studyType!),
+                ],
+                if (widget.group.groupSize != null) ...[
+                  const SizedBox(height: 8),
+                  _DetailRow(icon: Icons.people, text: '${widget.group.groupSize} members'),
+                ],
+                if (widget.group.ageGroup != null) ...[
+                  const SizedBox(height: 8),
+                  _DetailRow(icon: Icons.group, text: widget.group.ageGroup!),
+                ],
+                if (widget.group.language != null) ...[
+                  const SizedBox(height: 8),
+                  _DetailRow(icon: Icons.language, text: widget.group.language!),
+                ],
                 if (widget.group.distance > 0) ...[
                   const SizedBox(height: 8),
                   _DetailRow(icon: Icons.directions_car, text: '${widget.group.distance} miles away'),

@@ -1,5 +1,5 @@
 class UserGroupMembership {
-  final int groupId;
+  final String groupId;
   final String groupName;
   final DateTime joinedDate;
   final bool isActive;
@@ -17,7 +17,7 @@ class UserGroupMembership {
 
   factory UserGroupMembership.fromJson(Map<String, dynamic> json) {
     return UserGroupMembership(
-      groupId: json['groupId'] ?? 0,
+      groupId: json['groupId']?.toString() ?? '',
       groupName: json['groupName'] ?? '',
       joinedDate: DateTime.parse(json['joinedDate'] ?? DateTime.now().toIso8601String()),
       isActive: json['isActive'] ?? true,
@@ -38,7 +38,7 @@ class UserGroupMembership {
   }
 
   UserGroupMembership copyWith({
-    int? groupId,
+    String? groupId,
     String? groupName,
     DateTime? joinedDate,
     bool? isActive,

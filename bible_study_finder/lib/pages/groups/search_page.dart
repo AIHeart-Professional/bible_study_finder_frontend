@@ -4,6 +4,7 @@ import '../../models/group/search_criteria.dart';
 import '../../services/group_service.dart';
 import '../../widgets/study_group_card.dart';
 import '../../utils/platform_helper.dart';
+import '../../utils/logger.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -13,6 +14,7 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
+  final _logger = getLogger('SearchPage');
   final _formKey = GlobalKey<FormState>();
   final _searchTermController = TextEditingController();
   final _locationController = TextEditingController();
@@ -35,7 +37,45 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
-    _performSearch(); // Initial search with default criteria
+    _loadGroupsFromAPI(); // Load groups from API when tab is selected
+  }
+
+  Future<void> _loadGroupsFromAPI() async {
+    _logger.info('Loading groups from API...');
+    if (!mounted) return;
+    
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final groups = await GroupService.getGroups();
+      _logger.info('Successfully loaded ${groups.length} groups');
+      
+      if (!mounted) return;
+      setState(() {
+        _searchResults = groups;
+        _isLoading = false;
+        _hasSearched = true;
+      });
+    } catch (e, stackTrace) {
+      _logger.error('Error loading groups', error: e, stackTrace: stackTrace);
+      
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _hasSearched = true;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading groups: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override

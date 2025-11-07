@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
 import 'navigation/navbar.dart';
+import 'utils/logger.dart';
+import 'utils/app_config.dart';
 
 void main() {
+  // Initialize logger
+  BibleStudyLogger.initialize(
+    logLevel: AppConfig.isDebugMode ? LogLevel.debug : LogLevel.info,
+    consoleOutput: true,
+    fileOutput: false, // Set to true and provide logFilePath if you want file logging
+    // logFilePath: 'logs/bible_study_frontend.log', // Uncomment for file logging
+  );
+
   runApp(const MyApp());
 }
 

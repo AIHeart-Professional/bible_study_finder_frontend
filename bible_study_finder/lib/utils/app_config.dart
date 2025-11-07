@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+
 /// App Configuration
 /// 
 /// This file contains configuration values for the app including API keys,
@@ -21,8 +24,26 @@ class AppConfig {
   static const String bibleApiKey = 'd91bb5cc08f6b1625b9c8fc4f47e8d4e';
   
   // Backend API Configuration
-  static const String backendApiUrl = 'http://localhost:8000';
-  static const String backendApiVersion = '/api/v1';
+  // For Android emulator: use 10.0.2.2 (maps to host machine's localhost)
+  // For iOS simulator: use localhost
+  // For web: use localhost
+  // For physical devices: use your machine's IP address on local network
+  static String get backendApiUrl {
+    if (kIsWeb) {
+      return 'http://localhost:8000';
+    } else if (Platform.isAndroid) {
+      // Android emulator uses 10.0.2.2 to access host machine's localhost
+      return 'http://10.0.2.2:8000';
+    } else if (Platform.isIOS) {
+      // iOS simulator can use localhost
+      return 'http://localhost:8000';
+    } else {
+      // Desktop or other platforms
+      return 'http://localhost:8000';
+    }
+  }
+  
+  static const String backendApiVersion = '';
   
   // Database Configuration (when implemented)
   static const String defaultDatabaseUrl = 'sqlite:///./bible_study.db';
@@ -75,5 +96,8 @@ class AppConfig {
       'defaultLanguage': defaultLanguage,
     };
   }
+  
+  /// Get the backend API URL for logging/debugging
+  static String getBackendApiUrlForLogging() => backendApiUrl;
 }
 

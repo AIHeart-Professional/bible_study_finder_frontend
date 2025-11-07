@@ -45,7 +45,7 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
     }
   }
 
-  Future<void> _leaveGroup(int groupId) async {
+  Future<void> _leaveGroup(String groupId) async {
     try {
       final success = await MembershipService.leaveGroup(groupId);
       if (success) {
