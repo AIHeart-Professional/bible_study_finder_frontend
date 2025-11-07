@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/church/church.dart';
-import '../../services/church_service.dart';
+import '../../services/church/church_service.dart';
 import '../../widgets/church_card.dart';
 import '../../utils/platform_helper.dart';
 

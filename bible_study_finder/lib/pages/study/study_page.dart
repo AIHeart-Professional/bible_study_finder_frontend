@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/study/study_plan.dart';
-import '../../services/study_plan_service.dart';
+import '../../services/study/study_plan_service.dart';
 import '../../utils/platform_helper.dart';
 
 class StudyPage extends StatelessWidget {

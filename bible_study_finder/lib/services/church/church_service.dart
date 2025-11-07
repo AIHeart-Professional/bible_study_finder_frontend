@@ -1,4 +1,4 @@
-import '../models/church/church.dart';
+import '../../models/church/church.dart';
 
 class ChurchService {
   static const List<Church> _placeholderChurches = [
@@ -37,8 +37,15 @@ class ChurchService {
           description: 'Midweek Bible study and prayer',
         ),
       ],
-      ministries: ['Youth Ministry', 'Women\'s Ministry', 'Men\'s Ministry', 'Children\'s Ministry', 'Seniors Ministry'],
-      description: 'A welcoming community church focused on worship, fellowship, and serving our neighborhood. We believe in the power of God\'s love to transform lives.',
+      ministries: [
+        'Youth Ministry',
+        'Women\'s Ministry',
+        'Men\'s Ministry',
+        'Children\'s Ministry',
+        'Seniors Ministry'
+      ],
+      description:
+          'A welcoming community church focused on worship, fellowship, and serving our neighborhood. We believe in the power of God\'s love to transform lives.',
       distance: 2.1,
       rating: 4.8,
       reviewCount: 127,
@@ -83,8 +90,15 @@ class ChurchService {
           description: 'Community prayer and fellowship',
         ),
       ],
-      ministries: ['Missions', 'Music Ministry', 'Food Pantry', 'Senior Care', 'Bible Study Groups'],
-      description: 'Established in 1952, we are a Bible-believing church committed to sharing God\'s love through worship, discipleship, and community outreach.',
+      ministries: [
+        'Missions',
+        'Music Ministry',
+        'Food Pantry',
+        'Senior Care',
+        'Bible Study Groups'
+      ],
+      description:
+          'Established in 1952, we are a Bible-believing church committed to sharing God\'s love through worship, discipleship, and community outreach.',
       distance: 5.3,
       rating: 4.6,
       reviewCount: 89,
@@ -123,8 +137,15 @@ class ChurchService {
           description: 'Full liturgical service with choir',
         ),
       ],
-      ministries: ['Social Justice', 'Community Garden', 'Adult Education', 'Confirmation', 'Choir'],
-      description: 'A progressive Lutheran congregation committed to justice, inclusion, and spiritual growth. All are welcome at God\'s table.',
+      ministries: [
+        'Social Justice',
+        'Community Garden',
+        'Adult Education',
+        'Confirmation',
+        'Choir'
+      ],
+      description:
+          'A progressive Lutheran congregation committed to justice, inclusion, and spiritual growth. All are welcome at God\'s table.',
       distance: 1.8,
       rating: 4.7,
       reviewCount: 94,
@@ -169,8 +190,15 @@ class ChurchService {
           description: 'Prayer meeting with healing ministry',
         ),
       ],
-      ministries: ['Hispanic Ministry', 'Healing Ministry', 'Youth Group', 'Women\'s Circle', 'Men\'s Fellowship'],
-      description: 'A Spirit-filled church welcoming people from all backgrounds. We believe in the power of prayer, healing, and the gifts of the Holy Spirit.',
+      ministries: [
+        'Hispanic Ministry',
+        'Healing Ministry',
+        'Youth Group',
+        'Women\'s Circle',
+        'Men\'s Fellowship'
+      ],
+      description:
+          'A Spirit-filled church welcoming people from all backgrounds. We believe in the power of prayer, healing, and the gifts of the Holy Spirit.',
       distance: 8.2,
       rating: 4.9,
       reviewCount: 156,
@@ -209,8 +237,14 @@ class ChurchService {
           description: 'Informal worship and discussion',
         ),
       ],
-      ministries: ['Community Outreach', 'Environmental Stewardship', 'Artistic Expression', 'Small Groups'],
-      description: 'A diverse, creative community exploring faith through worship, art, and service. We emphasize God\'s love for all creation.',
+      ministries: [
+        'Community Outreach',
+        'Environmental Stewardship',
+        'Artistic Expression',
+        'Small Groups'
+      ],
+      description:
+          'A diverse, creative community exploring faith through worship, art, and service. We emphasize God\'s love for all creation.',
       distance: 15.7,
       rating: 4.5,
       reviewCount: 63,
@@ -222,29 +256,27 @@ class ChurchService {
     ),
   ];
 
-  static Future<List<Church>> searchChurches(String? location, {
-    String? denomination,
-    double maxDistance = 25.0,
-    List<String> preferredServices = const [],
-  }) async {
-    // Simulate API call with minimal delay for better UX
-    await Future.delayed(const Duration(milliseconds: 50)); // Reduced from 800ms
-    
+  static Future<List<Church>> searchChurches(String? location,
+      {String? denomination,
+      double maxDistance = 25.0,
+      List<String> preferredServices = const []}) async {
+    await Future.delayed(const Duration(milliseconds: 50));
+
     List<Church> results = List.from(_placeholderChurches);
-    
-    // Filter by denomination
+
     if (denomination != null && denomination.isNotEmpty) {
-      results = results.where((church) => 
-        church.denomination.toLowerCase().contains(denomination.toLowerCase())
-      ).toList();
+      results = results
+          .where((church) => church.denomination
+              .toLowerCase()
+              .contains(denomination.toLowerCase()))
+          .toList();
     }
-    
-    // Filter by distance
-    results = results.where((church) => church.distance <= maxDistance).toList();
-    
-    // Sort by distance (closest first)
+
+    results =
+        results.where((church) => church.distance <= maxDistance).toList();
+
     results.sort((a, b) => a.distance.compareTo(b.distance));
-    
+
     return results;
   }
 
@@ -278,3 +310,4 @@ class ChurchService {
     ];
   }
 }
+

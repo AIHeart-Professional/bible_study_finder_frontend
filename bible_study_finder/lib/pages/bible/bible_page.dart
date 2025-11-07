@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/bible/bible.dart';
-import '../../services/bible_service.dart';
+import '../../services/bible/bible_service.dart';
 import '../../utils/platform_helper.dart';
 
 class BiblePage extends StatefulWidget {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/group/bible_study_group.dart';
-import '../services/membership_service.dart';
+import '../services/membership/membership_service.dart';
 
 class StudyGroupCard extends StatefulWidget {
   final BibleStudyGroup group;

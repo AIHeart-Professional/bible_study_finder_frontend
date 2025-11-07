@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/group/bible_study_group.dart';
 import '../../models/group/user_group_membership.dart';
-import '../../services/membership_service.dart';
+import '../../services/membership/membership_service.dart';
 
 class MyGroupsPage extends StatefulWidget {
   const MyGroupsPage({super.key});

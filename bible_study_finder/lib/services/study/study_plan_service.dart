@@ -1,4 +1,4 @@
-import '../models/study/study_plan.dart';
+import '../../models/study/study_plan.dart';
 
 class StudyPlanService {
   static const List<StudyPlan> _studyPlans = [
@@ -13,7 +13,8 @@ class StudyPlanService {
     StudyPlan(
       id: 2,
       title: 'Psalms Deep Dive',
-      description: 'Explore the beautiful poetry and worship in the book of Psalms.',
+      description:
+          'Explore the beautiful poetry and worship in the book of Psalms.',
       duration: '60 days',
       difficulty: 'Intermediate',
       progress: 25,
@@ -32,3 +33,4 @@ class StudyPlanService {
     return List.from(_studyPlans);
   }
 }
+
