@@ -17,27 +17,10 @@ class StudyGroupCard extends StatefulWidget {
 }
 
 class _StudyGroupCardState extends State<StudyGroupCard> {
-  bool _isMember = false;
   bool _isLoading = false;
+  bool? _localMembershipOverride;
 
-  @override
-  void initState() {
-    super.initState();
-    _checkMembership();
-  }
-
-  Future<void> _checkMembership() async {
-    try {
-      final isMember = await MembershipService.isMemberOfGroup(widget.group.id);
-      if (mounted) {
-        setState(() {
-          _isMember = isMember;
-        });
-      }
-    } catch (e) {
-      // Handle error silently for now
-    }
-  }
+  bool get _isMember => _localMembershipOverride ?? widget.group.isMember;
 
   Future<void> _joinGroup() async {
     setState(() {
@@ -48,7 +31,7 @@ class _StudyGroupCardState extends State<StudyGroupCard> {
       final success = await MembershipService.joinGroup(widget.group.id);
       if (success) {
         setState(() {
-          _isMember = true;
+          _localMembershipOverride = true;
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -74,6 +57,45 @@ class _StudyGroupCardState extends State<StudyGroupCard> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error joining group: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _leaveGroup() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final success = await MembershipService.leaveGroup(widget.group.id);
+      if (success) {
+        setState(() {
+          _localMembershipOverride = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Successfully left ${widget.group.name}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+        widget.onMembershipChanged?.call();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error leaving group: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -216,15 +238,24 @@ class _StudyGroupCardState extends State<StudyGroupCard> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Joining ${widget.group.name}...'),
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        child: const Text('Join Group'),
+                        onPressed: _isLoading
+                            ? null
+                            : (_isMember ? _leaveGroup : _joinGroup),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isMember ? Colors.red : Colors.blue,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor:
+                                      AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : Text(_isMember ? 'Leave Group' : 'Join Group'),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -335,19 +366,32 @@ class _StudyGroupCardState extends State<StudyGroupCard> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Joining ${widget.group.name}...'),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.group_add),
-                    label: const Text('Join This Group'),
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            Navigator.of(context).pop();
+                            if (_isMember) {
+                              _leaveGroup();
+                            } else {
+                              _joinGroup();
+                            }
+                          },
+                    icon: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Icon(_isMember ? Icons.exit_to_app : Icons.group_add),
+                    label: Text(_isMember ? 'Leave Group' : 'Join This Group'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: _isMember ? Colors.red : Colors.blue,
+                      foregroundColor: Colors.white,
                     ),
                   ),
                 ),

@@ -21,6 +21,7 @@ class BibleStudyGroup {
   final String? leaderUserId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final bool isMember;
 
   const BibleStudyGroup({
     required this.id,
@@ -43,6 +44,7 @@ class BibleStudyGroup {
     this.leaderUserId,
     this.createdAt,
     this.updatedAt,
+    this.isMember = false,
   });
 
   factory BibleStudyGroup.fromJson(Map<String, dynamic> json) {
@@ -98,6 +100,7 @@ class BibleStudyGroup {
       leaderUserId: json['leaderUserId'],
       createdAt: parseDateTime(createdAtStr),
       updatedAt: parseDateTime(updatedAtStr),
+      isMember: json['isMember'] ?? false,
     );
   }
 
@@ -123,7 +126,34 @@ class BibleStudyGroup {
       'leaderUserId': leaderUserId,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'isMember': isMember,
     };
+  }
+
+  BibleStudyGroup copyWith({bool? isMember}) {
+    return BibleStudyGroup(
+      id: id,
+      name: name,
+      description: description,
+      image: image,
+      location: location,
+      locationData: locationData,
+      meetingDay: meetingDay,
+      meetingTime: meetingTime,
+      studyType: studyType,
+      ageGroup: ageGroup,
+      language: language,
+      groupSize: groupSize,
+      isOnline: isOnline,
+      isInPerson: isInPerson,
+      isChildcareAvailable: isChildcareAvailable,
+      isBeginnersWelcome: isBeginnersWelcome,
+      distance: distance,
+      leaderUserId: leaderUserId,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      isMember: isMember ?? this.isMember,
+    );
   }
 }
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'app_router.dart';
 import '../utils/platform_helper.dart';
+import '../pages/auth/auth_page.dart';
+import '../utils/auth_storage.dart';
 
 class MainNavigator extends StatefulWidget {
   const MainNavigator({super.key});
@@ -12,17 +14,28 @@ class MainNavigator extends StatefulWidget {
 class _MainNavigatorState extends State<MainNavigator> {
   int _currentIndex = 0;
   late PageController _pageController;
+  bool _isLoggedIn = false;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    _checkAuthStatus();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkAuthStatus() async {
+    final isLoggedIn = await AuthStorage.isLoggedIn();
+    if (mounted) {
+      setState(() {
+        _isLoggedIn = isLoggedIn;
+      });
+    }
   }
 
   void _onPageChanged(int index) {
@@ -42,7 +55,7 @@ class _MainNavigatorState extends State<MainNavigator> {
   @override
   Widget build(BuildContext context) {
     final shouldUseWebLayout = PlatformHelper.shouldUseWebLayout(context);
-    
+
     if (shouldUseWebLayout) {
       return _buildWebLayout(context);
     } else {
@@ -87,7 +100,10 @@ class _MainNavigatorState extends State<MainNavigator> {
                       AppRouter.getDescription(_currentIndex),
                       style: TextStyle(
                         fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
                       ),
                     ),
                   ],
@@ -95,15 +111,21 @@ class _MainNavigatorState extends State<MainNavigator> {
                 backgroundColor: Theme.of(context).colorScheme.surface,
                 elevation: 0,
                 scrolledUnderElevation: 4,
-                actions: (_currentIndex == 1 || _currentIndex == 2)
-                    ? [
-                        IconButton(
-                          onPressed: () => _showFilterDialog(context),
-                          icon: const Icon(Icons.filter_list),
-                          tooltip: 'Quick Filters',
-                        ),
-                      ]
-                    : null,
+                actions: [
+                  if (_currentIndex == 1 || _currentIndex == 2)
+                    IconButton(
+                      onPressed: () => _showFilterDialog(context),
+                      icon: const Icon(Icons.filter_list),
+                      tooltip: 'Quick Filters',
+                    ),
+                  IconButton(
+                    onPressed: _isLoggedIn
+                        ? () => _handleLogout(context)
+                        : () => _navigateToAuth(context),
+                    icon: Icon(_isLoggedIn ? Icons.logout : Icons.login),
+                    tooltip: _isLoggedIn ? 'Logout' : 'Login / Create Account',
+                  ),
+                ],
               ),
               body: PageView(
                 controller: _pageController,
@@ -134,7 +156,10 @@ class _MainNavigatorState extends State<MainNavigator> {
               AppRouter.getDescription(_currentIndex),
               style: TextStyle(
                 fontSize: 12,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withOpacity(0.6),
               ),
             ),
           ],
@@ -142,6 +167,15 @@ class _MainNavigatorState extends State<MainNavigator> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         scrolledUnderElevation: 4,
+        actions: [
+          IconButton(
+            onPressed: _isLoggedIn
+                ? () => _handleLogout(context)
+                : () => _navigateToAuth(context),
+            icon: Icon(_isLoggedIn ? Icons.logout : Icons.login),
+            tooltip: _isLoggedIn ? 'Logout' : 'Login / Create Account',
+          ),
+        ],
       ),
       body: PageView(
         controller: _pageController,
@@ -152,7 +186,8 @@ class _MainNavigatorState extends State<MainNavigator> {
         type: BottomNavigationBarType.fixed,
         currentIndex: _currentIndex,
         selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+        unselectedItemColor:
+            Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
         onTap: _onBottomNavTapped,
         items: List.generate(
           AppRouter.pages.length,
@@ -174,7 +209,7 @@ class _MainNavigatorState extends State<MainNavigator> {
       builder: (context) => AlertDialog(
         title: const Text('Quick Filters'),
         content: Text(
-          _currentIndex == 1 
+          _currentIndex == 1
               ? 'Filter Bible study groups by preferences'
               : 'Filter churches by denomination and services',
         ),
@@ -207,7 +242,7 @@ class _MainNavigatorState extends State<MainNavigator> {
             ),
             const SizedBox(height: 16),
             Text(
-              _currentIndex == 1 
+              _currentIndex == 1
                   ? 'Filter Bible study groups by preferences'
                   : 'Filter churches by denomination and services',
             ),
@@ -218,6 +253,57 @@ class _MainNavigatorState extends State<MainNavigator> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _navigateToAuth(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const AuthPage(),
+      ),
+    );
+    _checkAuthStatus();
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    final confirmed = await _showLogoutConfirmation(context);
+    if (confirmed == true) {
+      await AuthStorage.clearAuth();
+      if (mounted) {
+        setState(() {
+          _isLoggedIn = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Successfully logged out'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<bool?> _showLogoutConfirmation(BuildContext context) async {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
       ),
     );
   }
