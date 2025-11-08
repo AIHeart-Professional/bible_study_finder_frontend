@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../models/group/bible_study_group.dart';
 import '../../models/group/search_criteria.dart';
 import '../../services/group/group_service.dart';
-import '../../services/membership/membership_service.dart';
 import '../../widgets/study_group_card.dart';
 import '../../utils/platform_helper.dart';
 import '../../utils/logger.dart';

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../models/group/bible_study_group.dart';
 import '../../models/group/worksheet.dart';
+import '../../models/group/chat_message.dart';
 import '../../utils/app_config.dart';
 import '../../utils/logger.dart';
 import '../../utils/auth_storage.dart';
@@ -185,6 +186,112 @@ class GroupApi {
     } else {
       _logger.error('HTTP error: ${response.statusCode}');
       return [];
+    }
+  }
+
+  static Future<List<ChatMessage>> getChatApi(String groupId) async {
+    final stopwatch = Stopwatch()..start();
+    final url = _buildGetChatUrl(groupId);
+
+    _logger.debug('Fetching chat for group: $groupId from: $url');
+
+    try {
+      final headers = await AuthStorage.getAuthHeaders();
+      final response = await http.get(url, headers: headers).timeout(AppConfig.apiTimeout);
+      stopwatch.stop();
+      _logApiCall('GET', url.toString(), response.statusCode, stopwatch);
+
+      return _handleGetChatResponse(response);
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      _logApiError('GET', url.toString(), e);
+      _logger.error('Error fetching chat', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  static Uri _buildGetChatUrl(String groupId) {
+    return Uri.parse('${AppConfig.getBackendBaseUrl()}/groups/get_chat')
+        .replace(queryParameters: {'groupId': groupId});
+  }
+
+  static List<ChatMessage> _handleGetChatResponse(http.Response response) {
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      if (jsonData['success'] == true && jsonData['messages'] != null) {
+        final messagesList = jsonData['messages'] as List;
+        _logger.info('Successfully loaded ${messagesList.length} chat messages');
+        return messagesList
+            .map((item) => ChatMessage.fromJson(item as Map<String, dynamic>))
+            .toList();
+      } else {
+        final message = jsonData['message'] ?? 'Failed to load chat';
+        _logger.warning('API returned success=false: $message');
+        return [];
+      }
+    } else {
+      _logger.error('HTTP error: ${response.statusCode}');
+      return [];
+    }
+  }
+
+  static Future<String> createGroupChatApi(
+      String groupId, String userId, String message) async {
+    final stopwatch = Stopwatch()..start();
+    final url = _buildCreateChatUrl();
+
+    _logger.debug('Creating chat message for group: $groupId');
+
+    try {
+      final response = await _sendCreateChatRequest(url, groupId, userId, message);
+      stopwatch.stop();
+      _logApiCall('POST', url.toString(), response.statusCode, stopwatch);
+      return _handleCreateChatResponse(response);
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      _logApiError('POST', url.toString(), e);
+      _logger.error('Error creating chat message', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  static Uri _buildCreateChatUrl() {
+    return Uri.parse('${AppConfig.getBackendBaseUrl()}/groups/create_group_chat');
+  }
+
+  static Future<http.Response> _sendCreateChatRequest(
+      Uri url, String groupId, String userId, String message) async {
+    final headers = await AuthStorage.getAuthHeaders();
+    return await http
+        .post(
+          url,
+          headers: headers,
+          body: json.encode({
+            'groupId': groupId,
+            'userId': userId,
+            'message': message,
+          }),
+        )
+        .timeout(AppConfig.apiTimeout);
+  }
+
+  static String _handleCreateChatResponse(http.Response response) {
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      final success = jsonData['success'] ?? false;
+      final message = jsonData['message'] ?? '';
+      final chatId = jsonData['chatId'] ?? '';
+
+      if (success) {
+        _logger.info('Successfully created chat message: $chatId');
+        return chatId;
+      } else {
+        _logger.warning('Failed to create chat message: $message');
+        throw Exception(message);
+      }
+    } else {
+      _logger.error('HTTP error: ${response.statusCode}');
+      throw Exception('Failed to create chat message: ${response.statusCode}');
     }
   }
 

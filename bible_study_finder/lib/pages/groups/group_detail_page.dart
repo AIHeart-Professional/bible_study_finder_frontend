@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../models/group/bible_study_group.dart';
 import '../../models/group/worksheet.dart';
+import '../../models/group/chat_message.dart';
 import '../../services/group/group_service.dart';
 import '../../services/group/worksheet_service.dart';
+import '../../services/group/chat_service.dart';
 import '../../utils/logger.dart';
+import 'group_info_tab.dart';
+import 'group_chats_tab.dart';
+import 'group_resources_tab.dart';
 
 class GroupDetailPage extends StatefulWidget {
   final String groupId;
@@ -19,8 +24,11 @@ class GroupDetailPage extends StatefulWidget {
 
 class _GroupDetailPageState extends State<GroupDetailPage> {
   final _logger = getLogger('GroupDetailPage');
+  final PageController _pageController = PageController();
+  int _currentTabIndex = 0;
   BibleStudyGroup? _group;
   List<Worksheet> _worksheets = [];
+  List<ChatMessage> _chatMessages = [];
   bool _isLoading = true;
   String? _error;
 
@@ -28,6 +36,12 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   void initState() {
     super.initState();
     _loadGroupData();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadGroupData() async {
@@ -39,6 +53,25 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     } catch (e, stackTrace) {
       _handleLoadError(e, stackTrace);
     }
+  }
+
+  Future<void> _loadChatMessages() async {
+    try {
+      final messages = await ChatService.getChat(widget.groupId);
+      if (mounted) {
+        setState(() {
+          _chatMessages = _sortMessagesByDate(messages);
+        });
+      }
+    } catch (e, stackTrace) {
+      _logger.error('Error loading chat messages', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  List<ChatMessage> _sortMessagesByDate(List<ChatMessage> messages) {
+    final sorted = List<ChatMessage>.from(messages);
+    sorted.sort((a, b) => a.sentAt.compareTo(b.sentAt));
+    return sorted;
   }
 
   void _setLoading(bool isLoading) {
@@ -68,430 +101,151 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     }
   }
 
+  void _onTabTapped(int index) {
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentTabIndex = index;
+    });
+    if (index == 1 && _chatMessages.isEmpty) {
+      _loadChatMessages();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _isLoading
-          ? _buildLoadingState()
-          : _error != null
-              ? _buildErrorState()
-              : _group == null
-                  ? _buildEmptyState()
-                  : _buildContent(),
-    );
+    if (_isLoading) {
+      return _buildLoadingState();
+    }
+    if (_error != null) {
+      return _buildErrorState();
+    }
+    if (_group == null) {
+      return _buildEmptyState();
+    }
+    return _buildContent();
   }
 
   Widget _buildLoadingState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16),
-          Text('Loading group details...'),
-        ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Loading...'),
       ),
-    );
-  }
-
-  Widget _buildErrorState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
+      body: const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red[300],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Error Loading Group',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _error ?? 'Unknown error',
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _loadGroupData,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Try Again'),
-            ),
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading group details...'),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildErrorState() {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Error'),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red[300],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Error Loading Group',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error ?? 'Unknown error',
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _loadGroupData,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Try Again'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmptyState() {
-    return const Center(
-      child: Text('Group not found'),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Group Not Found'),
+      ),
+      body: const Center(
+        child: Text('Group not found'),
+      ),
     );
   }
 
   Widget _buildContent() {
-    return CustomScrollView(
-      slivers: [
-        _buildAppBar(),
-        SliverToBoxAdapter(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeaderSection(),
-              _buildInfoSection(),
-              _buildWorksheetsSection(),
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAppBar() {
-    return SliverAppBar(
-      expandedHeight: 200,
-      pinned: true,
-      flexibleSpace: FlexibleSpaceBar(
-        title: Text(
-          _group?.name ?? '',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.secondary,
-              ],
-            ),
-          ),
-          child: const Center(
-            child: Icon(
-              Icons.groups,
-              size: 80,
-              color: Colors.white70,
-            ),
-          ),
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_group?.name ?? ''),
       ),
-    );
-  }
-
-  Widget _buildHeaderSection() {
-    return Container(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: _onPageChanged,
         children: [
-          Text(
-            _group?.name ?? '',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+          GroupInfoTab(group: _group!),
+          GroupChatsTab(
+            groupId: widget.groupId,
+            messages: _chatMessages,
+            onRefresh: _loadChatMessages,
           ),
-          const SizedBox(height: 8),
-          Text(
-            _group?.description ?? '',
-            style: Theme.of(context).textTheme.bodyLarge,
+          GroupResourcesTab(
+            worksheets: _worksheets,
+            groupId: widget.groupId,
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildInfoSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24.0),
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          if (_group?.location != null) _buildInfoRow(Icons.location_on, 'Location', _group!.location),
-          if (_group?.meetingDay != null || _group?.meetingTime != null)
-            _buildInfoRow(
-              Icons.calendar_today,
-              'Meeting Time',
-              '${_group?.meetingDay ?? ''}${_group?.meetingDay != null ? 's' : ''}${_group?.meetingTime != null ? ', ${_group?.meetingTime}' : ''}',
-            ),
-          if (_group?.language != null)
-            _buildInfoRow(Icons.language, 'Language', _group!.language!),
-          if (_group?.studyType != null)
-            _buildInfoRow(Icons.menu_book, 'Study Type', _group!.studyType!),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                      ),
-                ),
-                Text(
-                  value,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                ),
-              ],
-            ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentTabIndex,
+        onTap: _onTabTapped,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.info_outline),
+            activeIcon: Icon(Icons.info),
+            label: 'Info',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
+            activeIcon: Icon(Icons.chat_bubble),
+            label: 'Chats',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.folder_outlined),
+            activeIcon: Icon(Icons.folder),
+            label: 'Resources',
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildWorksheetsSection() {
-    return Container(
-      margin: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Worksheets',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              Text(
-                '${_worksheets.length}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _worksheets.isEmpty
-              ? _buildEmptyWorksheets()
-              : _buildWorksheetsList(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyWorksheets() {
-    return Container(
-      padding: const EdgeInsets.all(32.0),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.description_outlined,
-            size: 48,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No Worksheets Yet',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Worksheets will appear here when they are added to this group.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWorksheetsList() {
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _worksheets.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        return _buildWorksheetCard(_worksheets[index]);
-      },
-    );
-  }
-
-  Widget _buildWorksheetCard(Worksheet worksheet) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: () => _showWorksheetDetails(worksheet),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.description,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      worksheet.title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _truncateContent(worksheet.content),
-                style: Theme.of(context).textTheme.bodyMedium,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Updated ${_formatDate(worksheet.updatedAt)}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _truncateContent(String content) {
-    if (content.length <= 150) {
-      return content;
-    }
-    return '${content.substring(0, 150)}...';
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date).inDays;
-
-    if (difference == 0) {
-      return 'today';
-    } else if (difference == 1) {
-      return 'yesterday';
-    } else if (difference < 7) {
-      return '$difference days ago';
-    } else if (difference < 30) {
-      final weeks = (difference / 7).floor();
-      return '$weeks week${weeks == 1 ? '' : 's'} ago';
-    } else if (difference < 365) {
-      final months = (difference / 30).floor();
-      return '$months month${months == 1 ? '' : 's'} ago';
-    } else {
-      final years = (difference / 365).floor();
-      return '$years year${years == 1 ? '' : 's'} ago';
-    }
-  }
-
-  void _showWorksheetDetails(Worksheet worksheet) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        maxChildSize: 0.95,
-        minChildSize: 0.5,
-        expand: false,
-        builder: (context, scrollController) => SingleChildScrollView(
-          controller: scrollController,
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  worksheet.title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Updated ${_formatDate(worksheet.updatedAt)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                ),
-                const SizedBox(height: 24),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    worksheet.content,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
 }
-
