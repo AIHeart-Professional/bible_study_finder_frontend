@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../pages/home/home_page.dart';
-import '../pages/groups/search_page.dart';
+import '../pages/groups/groups_page.dart';
 import '../pages/churches/churches_page.dart';
 import '../pages/bible/bible_page.dart';
 import '../pages/study/study_page.dart';
@@ -61,7 +61,7 @@ class AppRouter {
 
   static List<Widget> get pages => [
     const HomePage(),
-    const SearchPage(),
+    const GroupsPage(),
     const ChurchesPage(),
     const BiblePage(),
     const StudyPage(),

@@ -1,6 +1,7 @@
 import '../../models/group/bible_study_group.dart';
 import '../../models/group/search_criteria.dart';
 import '../../apis/group/group_api.dart';
+import '../../services/membership/membership_service.dart';
 import '../../utils/logger.dart';
 import '../../utils/auth_storage.dart';
 
@@ -26,7 +27,7 @@ class GroupService {
         return groups;
       }
 
-      final userGroups = await GroupApi.getUserGroupsApi(userId);
+      final userGroups = await MembershipService.getMyGroups();
       final userGroupIds = userGroups.map((g) => g.id).toSet();
 
       return groups.map((group) {
@@ -57,6 +58,15 @@ class GroupService {
     } catch (e, stackTrace) {
       _logger.error('Error searching groups', error: e, stackTrace: stackTrace);
       throw Exception('Error searching groups: $e');
+    }
+  }
+
+  static Future<BibleStudyGroup> getGroup(String groupId) async {
+    try {
+      return await GroupApi.getGroupApi(groupId);
+    } catch (e, stackTrace) {
+      _logger.error('Error fetching group', error: e, stackTrace: stackTrace);
+      throw Exception('Error fetching group: $e');
     }
   }
 

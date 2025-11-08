@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../models/group/bible_study_group.dart';
+import '../../models/group/worksheet.dart';
 import '../../utils/app_config.dart';
 import '../../utils/logger.dart';
 import '../../utils/auth_storage.dart';
@@ -88,6 +89,96 @@ class GroupApi {
             .toList();
       } else {
         final message = jsonData['message'] ?? 'Failed to load user groups';
+        _logger.warning('API returned success=false: $message');
+        return [];
+      }
+    } else {
+      _logger.error('HTTP error: ${response.statusCode}');
+      return [];
+    }
+  }
+
+  static Future<BibleStudyGroup> getGroupApi(String groupId) async {
+    final stopwatch = Stopwatch()..start();
+    final url = _buildGetGroupUrl(groupId);
+
+    _logger.debug('Fetching group: $groupId from: $url');
+
+    try {
+      final headers = await AuthStorage.getAuthHeaders();
+      final response = await http.get(url, headers: headers).timeout(AppConfig.apiTimeout);
+      stopwatch.stop();
+      _logApiCall('GET', url.toString(), response.statusCode, stopwatch);
+
+      return _handleGetGroupResponse(response, groupId);
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      _logApiError('GET', url.toString(), e);
+      _logger.error('Error fetching group', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  static Uri _buildGetGroupUrl(String groupId) {
+    return Uri.parse('${AppConfig.getBackendBaseUrl()}/groups/get_group')
+        .replace(queryParameters: {'groupId': groupId});
+  }
+
+  static BibleStudyGroup _handleGetGroupResponse(
+      http.Response response, String groupId) {
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      if (jsonData['success'] == true && jsonData['group'] != null) {
+        _logger.info('Successfully loaded group: $groupId');
+        return BibleStudyGroup.fromJson(jsonData['group']);
+      } else {
+        final message = jsonData['message'] ?? 'Failed to load group';
+        _logger.warning('API returned success=false: $message');
+        throw Exception(message);
+      }
+    } else {
+      _logger.error('HTTP error: ${response.statusCode}');
+      throw Exception('Failed to load group: ${response.statusCode}');
+    }
+  }
+
+  static Future<List<Worksheet>> getWorksheetsApi(String groupId) async {
+    final stopwatch = Stopwatch()..start();
+    final url = _buildGetWorksheetsUrl(groupId);
+
+    _logger.debug('Fetching worksheets for group: $groupId from: $url');
+
+    try {
+      final headers = await AuthStorage.getAuthHeaders();
+      final response = await http.get(url, headers: headers).timeout(AppConfig.apiTimeout);
+      stopwatch.stop();
+      _logApiCall('GET', url.toString(), response.statusCode, stopwatch);
+
+      return _handleGetWorksheetsResponse(response);
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      _logApiError('GET', url.toString(), e);
+      _logger.error('Error fetching worksheets', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  static Uri _buildGetWorksheetsUrl(String groupId) {
+    return Uri.parse('${AppConfig.getBackendBaseUrl()}/groups/get_worksheets')
+        .replace(queryParameters: {'groupId': groupId});
+  }
+
+  static List<Worksheet> _handleGetWorksheetsResponse(http.Response response) {
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      if (jsonData['success'] == true && jsonData['worksheets'] != null) {
+        final worksheetsList = jsonData['worksheets'] as List;
+        _logger.info('Successfully loaded ${worksheetsList.length} worksheets');
+        return worksheetsList
+            .map((item) => Worksheet.fromJson(item as Map<String, dynamic>))
+            .toList();
+      } else {
+        final message = jsonData['message'] ?? 'Failed to load worksheets';
         _logger.warning('API returned success=false: $message');
         return [];
       }

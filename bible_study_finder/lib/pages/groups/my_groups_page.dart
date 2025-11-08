@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/group/bible_study_group.dart';
 import '../../models/group/user_group_membership.dart';
 import '../../services/membership/membership_service.dart';
+import 'group_detail_page.dart';
 
 class MyGroupsPage extends StatefulWidget {
   const MyGroupsPage({super.key});
@@ -10,15 +11,23 @@ class MyGroupsPage extends StatefulWidget {
   State<MyGroupsPage> createState() => _MyGroupsPageState();
 }
 
-class _MyGroupsPageState extends State<MyGroupsPage> {
+class _MyGroupsPageState extends State<MyGroupsPage>
+    with AutomaticKeepAliveClientMixin {
   List<BibleStudyGroup> _myGroups = [];
   List<UserGroupMembership> _memberships = [];
   bool _isLoading = true;
   String? _error;
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   void initState() {
     super.initState();
+    _loadMyGroups();
+  }
+
+  void refresh() {
     _loadMyGroups();
   }
 
@@ -30,11 +39,18 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
 
     try {
       final groups = await MembershipService.getMyGroups();
-      final memberships = await MembershipService.getUserMemberships();
       
       setState(() {
         _myGroups = groups;
-        _memberships = memberships;
+        _memberships = groups.map((group) {
+          return UserGroupMembership(
+            groupId: group.id,
+            groupName: group.name,
+            joinedDate: DateTime.now(),
+            isActive: true,
+            role: 'member',
+          );
+        }).toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -55,7 +71,7 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
             backgroundColor: Colors.green,
           ),
         );
-        _loadMyGroups(); // Refresh the list
+        refresh(); // Refresh the list
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -207,6 +223,7 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -369,6 +386,13 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
                   return _MyGroupCard(
                     group: group,
                     membership: membership,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => GroupDetailPage(groupId: group.id),
+                        ),
+                      );
+                    },
                     onLeaveGroup: () => _showLeaveGroupDialog(group),
                     onViewDetails: () => _showMembershipDetails(membership),
                   );
@@ -378,14 +402,7 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Navigate to search page
-          Navigator.of(context).pop();
-        },
-        icon: const Icon(Icons.search),
-        label: const Text('Find More Groups'),
-      ),
+      
     );
   }
 }
@@ -393,12 +410,14 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
 class _MyGroupCard extends StatelessWidget {
   final BibleStudyGroup group;
   final UserGroupMembership membership;
+  final VoidCallback onTap;
   final VoidCallback onLeaveGroup;
   final VoidCallback onViewDetails;
 
   const _MyGroupCard({
     required this.group,
     required this.membership,
+    required this.onTap,
     required this.onLeaveGroup,
     required this.onViewDetails,
   });
@@ -407,7 +426,9 @@ class _MyGroupCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: Column(
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Group Image
@@ -553,6 +574,7 @@ class _MyGroupCard extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }

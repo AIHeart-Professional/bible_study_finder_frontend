@@ -54,8 +54,8 @@ class MembershipService {
         _logger.warning('User not logged in, returning empty groups list');
         return [];
       }
-      _logger.warning('getMyGroups API endpoint not yet implemented, returning empty list');
-      return [];
+
+      return await GroupApi.getUserGroupsApi(userId);
     } catch (e, stackTrace) {
       _logger.error('Error fetching my groups', error: e, stackTrace: stackTrace);
       throw Exception('Error fetching my groups: $e');
