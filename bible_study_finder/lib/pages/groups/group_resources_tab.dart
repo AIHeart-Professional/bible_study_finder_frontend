@@ -4,11 +4,13 @@ import '../../models/group/worksheet.dart';
 class GroupResourcesTab extends StatelessWidget {
   final List<Worksheet> worksheets;
   final String groupId;
+  final List<String> userPermissions;
 
   const GroupResourcesTab({
     super.key,
     required this.worksheets,
     required this.groupId,
+    required this.userPermissions,
   });
 
   @override
@@ -40,6 +42,18 @@ class GroupResourcesTab extends StatelessWidget {
     );
   }
 
+  bool _canUploadResources() {
+    final canUpload = userPermissions.contains('upload_resources') ||
+        userPermissions.contains('create_worksheet') ||
+        userPermissions.contains('edit_group_resources');
+    
+    // Debug logging
+    debugPrint('GroupResourcesTab - User permissions: $userPermissions');
+    debugPrint('GroupResourcesTab - Can upload: $canUpload');
+    
+    return canUpload;
+  }
+
   Widget _buildHeader(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,16 +67,40 @@ class GroupResourcesTab extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
             ),
-            Text(
-              '${worksheets.length}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            Row(
+              children: [
+                Text(
+                  '${worksheets.length}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                ),
+                if (_canUploadResources()) ...[
+                  const SizedBox(width: 16),
+                  IconButton(
+                    onPressed: () => _handleUploadResource(context),
+                    icon: const Icon(Icons.upload),
+                    tooltip: 'Upload Resource',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
+                    ),
                   ),
+                ],
+              ],
             ),
           ],
         ),
         const SizedBox(height: 16),
       ],
+    );
+  }
+
+  void _handleUploadResource(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Upload resource functionality coming soon'),
+      ),
     );
   }
 

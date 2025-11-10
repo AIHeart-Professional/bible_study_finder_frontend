@@ -6,6 +6,7 @@ import '../../services/group/group_service.dart';
 import '../../services/group/worksheet_service.dart';
 import '../../services/group/chat_service.dart';
 import '../../utils/logger.dart';
+import '../../utils/permissions.dart';
 import 'group_info_tab.dart';
 import 'group_chats_tab.dart';
 import 'group_resources_tab.dart';
@@ -29,6 +30,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   BibleStudyGroup? _group;
   List<Worksheet> _worksheets = [];
   List<ChatMessage> _chatMessages = [];
+  List<String> _userPermissions = [];
   bool _isLoading = true;
   String? _error;
 
@@ -49,7 +51,8 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     try {
       final group = await GroupService.getGroup(widget.groupId);
       final worksheets = await WorksheetService.getWorksheets(widget.groupId);
-      _updateGroupData(group, worksheets);
+      final permissions = await Permissions.getUserPermissions(widget.groupId);
+      _updateGroupData(group, worksheets, permissions);
     } catch (e, stackTrace) {
       _handleLoadError(e, stackTrace);
     }
@@ -81,11 +84,13 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
     });
   }
 
-  void _updateGroupData(BibleStudyGroup group, List<Worksheet> worksheets) {
+  void _updateGroupData(BibleStudyGroup group, List<Worksheet> worksheets,
+      List<String> permissions) {
     if (mounted) {
       setState(() {
         _group = group;
         _worksheets = worksheets;
+        _userPermissions = permissions;
         _isLoading = false;
       });
     }
@@ -208,22 +213,23 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       appBar: AppBar(
         title: Text(_group?.name ?? ''),
       ),
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        children: [
-          GroupInfoTab(group: _group!),
-          GroupChatsTab(
-            groupId: widget.groupId,
-            messages: _chatMessages,
-            onRefresh: _loadChatMessages,
-          ),
-          GroupResourcesTab(
-            worksheets: _worksheets,
-            groupId: widget.groupId,
-          ),
-        ],
-      ),
+           body: PageView(
+             controller: _pageController,
+             onPageChanged: _onPageChanged,
+             children: [
+               GroupInfoTab(group: _group!),
+               GroupChatsTab(
+                 groupId: widget.groupId,
+                 messages: _chatMessages,
+                 onRefresh: _loadChatMessages,
+               ),
+               GroupResourcesTab(
+                 worksheets: _worksheets,
+                 groupId: widget.groupId,
+                 userPermissions: _userPermissions,
+               ),
+             ],
+           ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentTabIndex,
         onTap: _onTabTapped,
