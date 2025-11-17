@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../../models/group/bible_study_group.dart';
 import '../../models/group/worksheet.dart';
 import '../../models/group/chat_message.dart';
+import '../../models/group/location.dart';
 import '../../utils/app_config.dart';
 import '../../utils/logger.dart';
 import '../../utils/auth_storage.dart';
@@ -418,6 +419,74 @@ class GroupApi {
       statusCode: statusCode,
       responseTime: responseTime,
     );
+  }
+
+  static Future<String> createGroupApi(
+      String name,
+      String description,
+      String leaderUserId,
+      Location location,
+      String? image) async {
+    final stopwatch = Stopwatch()..start();
+    final url = _buildCreateGroupUrl();
+
+    _logger.debug('Creating group: name=$name, leaderUserId=$leaderUserId');
+
+    try {
+      final response = await _sendCreateGroupRequest(
+          url, name, description, leaderUserId, location, image);
+      stopwatch.stop();
+      _logApiCall('POST', url.toString(), response.statusCode, stopwatch);
+      return _handleCreateGroupResponse(response);
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      _logApiError('POST', url.toString(), e);
+      _logger.error('Error creating group', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  static Uri _buildCreateGroupUrl() {
+    return Uri.parse('${AppConfig.getBackendBaseUrl()}/groups/create_group');
+  }
+
+  static Future<http.Response> _sendCreateGroupRequest(Uri url, String name,
+      String description, String leaderUserId, Location location,
+      String? image) async {
+    final headers = await AuthStorage.getAuthHeaders();
+    final requestHeaders = {
+      ...headers,
+      'Content-Type': 'application/json',
+    };
+    final body = json.encode({
+      'name': name,
+      'description': description,
+      'leaderUserId': leaderUserId,
+      'location': location.toJson(),
+      if (image != null) 'image': image,
+    });
+    return await http
+        .post(url, headers: requestHeaders, body: body)
+        .timeout(AppConfig.apiTimeout);
+  }
+
+  static String _handleCreateGroupResponse(http.Response response) {
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      final success = jsonData['success'] ?? false;
+      if (success) {
+        final groupId = jsonData['groupId'] ?? '';
+        _logger.info('Successfully created group: $groupId');
+        return groupId;
+      } else {
+        final message = jsonData['message'] ?? 'Failed to create group';
+        _logger.warning('API returned success=false: $message');
+        throw Exception(message);
+      }
+    } else {
+      _logger.error('HTTP error: ${response.statusCode}');
+      throw Exception('Failed to create group: ${response.statusCode}');
+    }
   }
 
   static void _logApiError(String method, String url, dynamic error) {

@@ -402,7 +402,6 @@ class _MyGroupsPageState extends State<MyGroupsPage>
           ],
         ),
       ),
-      
     );
   }
 }

@@ -1,6 +1,8 @@
 import '../../models/group/bible_study_group.dart';
 import '../../models/group/search_criteria.dart';
+import '../../models/group/location.dart';
 import '../../apis/group/group_api.dart';
+import '../../apis/roles/roles_api.dart';
 import '../../services/membership/membership_service.dart';
 import '../../utils/logger.dart';
 import '../../utils/auth_storage.dart';
@@ -67,6 +69,47 @@ class GroupService {
     } catch (e, stackTrace) {
       _logger.error('Error fetching group', error: e, stackTrace: stackTrace);
       throw Exception('Error fetching group: $e');
+    }
+  }
+
+  static Future<String> createGroup({
+    required String name,
+    required String description,
+    required Location location,
+    String? image,
+  }) async {
+    try {
+      final userId = await AuthStorage.getUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+
+      _logger.debug('Creating group: name=$name, userId=$userId');
+
+      final groupId = await GroupApi.createGroupApi(
+        name,
+        description,
+        userId,
+        location,
+        image,
+      );
+
+      final joinSuccess = await GroupApi.joinGroupApi(groupId, userId);
+      if (!joinSuccess) {
+        _logger.warning('Failed to join group after creation');
+        throw Exception('Failed to join group after creation');
+      }
+
+      final roleSuccess = await RolesApi.createGroupRoleApi(userId, groupId, 'admin');
+      if (!roleSuccess) {
+        _logger.warning('Failed to assign admin role after group creation');
+      }
+
+      _logger.info('Successfully created group and assigned admin role: $groupId');
+      return groupId;
+    } catch (e, stackTrace) {
+      _logger.error('Error creating group', error: e, stackTrace: stackTrace);
+      throw Exception('Error creating group: $e');
     }
   }
 

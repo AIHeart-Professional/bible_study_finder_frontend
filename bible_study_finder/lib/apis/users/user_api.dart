@@ -85,6 +85,7 @@ class UserApi {
 
   static Future<http.Response> _sendCreateUserRequest(
       Uri url, CreateUserRequest request) async {
+    _logger.debug('User Body before sending to backend: ${request.toJson()}');
     return await http
         .post(
           url,

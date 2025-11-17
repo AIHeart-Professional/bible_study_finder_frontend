@@ -48,6 +48,45 @@ class RolesApi {
     }
   }
 
+  static Future<bool> createGroupRoleApi(
+      String userId, String groupId, String role) async {
+    final stopwatch = Stopwatch()..start();
+    final url = _buildCreateGroupRoleUrl();
+
+    _logger.debug('Creating group role: userId=$userId, groupId=$groupId, role=$role');
+
+    try {
+      final response = await _sendCreateGroupRoleRequest(url, userId, groupId, role);
+      stopwatch.stop();
+      _logApiCall('POST', url.toString(), response.statusCode, stopwatch);
+      return _handleCreateGroupRoleResponse(response);
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      _logApiError('POST', url.toString(), e);
+      _logger.error('Error creating group role', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  static Future<bool> removeGroupRoleApi(String userId, String groupId) async {
+    final stopwatch = Stopwatch()..start();
+    final url = _buildRemoveGroupRoleUrl();
+
+    _logger.debug('Removing group role: userId=$userId, groupId=$groupId');
+
+    try {
+      final response = await _sendRemoveGroupRoleRequest(url, userId, groupId);
+      stopwatch.stop();
+      _logApiCall('POST', url.toString(), response.statusCode, stopwatch);
+      return _handleRemoveGroupRoleResponse(response);
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      _logApiError('POST', url.toString(), e);
+      _logger.error('Error removing group role', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
   static Uri _buildGetGroupRolesUrl(String? groupId, String? userId) {
     final uri = Uri.parse('${AppConfig.getBackendBaseUrl()}/roles/get_group_roles');
     final queryParams = <String, String>{};
@@ -64,6 +103,14 @@ class RolesApi {
     return Uri.parse('${AppConfig.getBackendBaseUrl()}/roles/get_roles');
   }
 
+  static Uri _buildCreateGroupRoleUrl() {
+    return Uri.parse('${AppConfig.getBackendBaseUrl()}/roles/create_group_role');
+  }
+
+  static Uri _buildRemoveGroupRoleUrl() {
+    return Uri.parse('${AppConfig.getBackendBaseUrl()}/roles/remove_group_role');
+  }
+
   static Future<http.Response> _sendGetGroupRolesRequest(Uri url) async {
     final headers = await AuthStorage.getAuthHeaders();
     return await http.get(url, headers: headers).timeout(AppConfig.apiTimeout);
@@ -72,6 +119,39 @@ class RolesApi {
   static Future<http.Response> _sendGetRolesRequest(Uri url) async {
     final headers = await AuthStorage.getAuthHeaders();
     return await http.get(url, headers: headers).timeout(AppConfig.apiTimeout);
+  }
+
+  static Future<http.Response> _sendCreateGroupRoleRequest(
+      Uri url, String userId, String groupId, String role) async {
+    final authHeaders = await AuthStorage.getAuthHeaders();
+    final headers = {
+      ...authHeaders,
+      'Content-Type': 'application/json',
+    };
+    final body = json.encode({
+      'userId': userId,
+      'groupId': groupId,
+      'role': role,
+    });
+    return await http
+        .post(url, headers: headers, body: body)
+        .timeout(AppConfig.apiTimeout);
+  }
+
+  static Future<http.Response> _sendRemoveGroupRoleRequest(
+      Uri url, String userId, String groupId) async {
+    final authHeaders = await AuthStorage.getAuthHeaders();
+    final headers = {
+      ...authHeaders,
+      'Content-Type': 'application/json',
+    };
+    final body = json.encode({
+      'userId': userId,
+      'groupId': groupId,
+    });
+    return await http
+        .post(url, headers: headers, body: body)
+        .timeout(AppConfig.apiTimeout);
   }
 
   static List<GroupRole> _handleGetGroupRolesResponse(http.Response response) {
@@ -116,6 +196,42 @@ class RolesApi {
     } else {
       _logger.error('HTTP error: ${response.statusCode}');
       return [];
+    }
+  }
+
+  static bool _handleCreateGroupRoleResponse(http.Response response) {
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      final success = jsonData['success'] ?? false;
+      if (success) {
+        _logger.debug('Successfully created group role');
+        return true;
+      } else {
+        final message = jsonData['message'] ?? 'Failed to create group role';
+        _logger.warning('API returned success=false: $message');
+        return false;
+      }
+    } else {
+      _logger.error('HTTP error: ${response.statusCode}');
+      return false;
+    }
+  }
+
+  static bool _handleRemoveGroupRoleResponse(http.Response response) {
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      final success = jsonData['success'] ?? false;
+      if (success) {
+        _logger.debug('Successfully removed group role');
+        return true;
+      } else {
+        final message = jsonData['message'] ?? 'Failed to remove group role';
+        _logger.warning('API returned success=false: $message');
+        return false;
+      }
+    } else {
+      _logger.error('HTTP error: ${response.statusCode}');
+      return false;
     }
   }
 

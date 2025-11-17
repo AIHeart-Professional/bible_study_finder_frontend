@@ -17,6 +17,7 @@ class _AuthPageState extends State<AuthPage> {
   final _lastNameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _attendedChurchesController = TextEditingController();
 
   bool _isLoginMode = true;
   bool _isLoading = false;
@@ -31,6 +32,7 @@ class _AuthPageState extends State<AuthPage> {
     _lastNameController.dispose();
     _usernameController.dispose();
     _confirmPasswordController.dispose();
+    _attendedChurchesController.dispose();
     super.dispose();
   }
 
@@ -88,12 +90,14 @@ class _AuthPageState extends State<AuthPage> {
     _setLoading(true);
 
     try {
+      final attendedChurches = _parseAttendedChurches();
       final response = await UserService.createUser(
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
         username: _usernameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        attendedChurches: attendedChurches,
       );
       _handleCreateAccountResponse(response);
     } catch (e) {
@@ -105,6 +109,18 @@ class _AuthPageState extends State<AuthPage> {
 
   bool _passwordsMatch() {
     return _passwordController.text == _confirmPasswordController.text;
+  }
+
+  List<String>? _parseAttendedChurches() {
+    final text = _attendedChurchesController.text.trim();
+    if (text.isEmpty) {
+      return null;
+    }
+    return text
+        .split(',')
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toList();
   }
 
   void _handleCreateAccountResponse(dynamic response) {
@@ -160,6 +176,7 @@ class _AuthPageState extends State<AuthPage> {
     _lastNameController.clear();
     _usernameController.clear();
     _confirmPasswordController.clear();
+    _attendedChurchesController.clear();
   }
 
   void _toggleMode() {
@@ -192,6 +209,7 @@ class _AuthPageState extends State<AuthPage> {
               const SizedBox(height: 16),
               _buildPasswordField(),
               if (!_isLoginMode) _buildConfirmPasswordField(),
+              if (!_isLoginMode) _buildAttendedChurchesField(),
               const SizedBox(height: 32),
               _buildSubmitButton(),
               const SizedBox(height: 16),
@@ -404,6 +422,24 @@ class _AuthPageState extends State<AuthPage> {
               ),
             )
           : Text(_isLoginMode ? 'Login' : 'Create Account'),
+    );
+  }
+
+  Widget _buildAttendedChurchesField() {
+    return Column(
+      children: [
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _attendedChurchesController,
+          decoration: const InputDecoration(
+            labelText: 'Attended Churches (Optional)',
+            hintText: 'Enter church IDs separated by commas',
+            prefixIcon: Icon(Icons.church),
+            border: OutlineInputBorder(),
+            helperText: 'Optional: Enter church IDs you have attended, separated by commas',
+          ),
+        ),
+      ],
     );
   }
 

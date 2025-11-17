@@ -1,8 +1,10 @@
 import '../../models/group/bible_study_group.dart';
 import '../../models/group/user_group_membership.dart';
 import '../../apis/group/group_api.dart';
+import '../../apis/roles/roles_api.dart';
 import '../../utils/logger.dart';
 import '../../utils/auth_storage.dart';
+import '../../utils/permissions.dart';
 
 class MembershipService {
   static final _logger = getLogger('MembershipService');
@@ -27,7 +29,23 @@ class MembershipService {
       if (userId == null) {
         throw Exception('User not logged in');
       }
-      return await GroupApi.joinGroupApi(groupId, userId);
+      
+      final joinSuccess = await GroupApi.joinGroupApi(groupId, userId);
+      if (!joinSuccess) {
+        _logger.warning('Failed to join group, not creating role');
+        return false;
+      }
+      
+      final roleSuccess = await RolesApi.createGroupRoleApi(userId, groupId, 'member');
+      if (!roleSuccess) {
+        _logger.warning('Failed to create member role, but user joined group');
+      }
+      
+      if (roleSuccess) {
+        Permissions.clearGroupCache(groupId);
+      }
+      
+      return joinSuccess;
     } catch (e, stackTrace) {
       _logger.error('Error joining group', error: e, stackTrace: stackTrace);
       throw Exception('Error joining group: $e');
@@ -40,7 +58,23 @@ class MembershipService {
       if (userId == null) {
         throw Exception('User not logged in');
       }
-      return await GroupApi.leaveGroupApi(groupId, userId);
+      
+      final leaveSuccess = await GroupApi.leaveGroupApi(groupId, userId);
+      if (!leaveSuccess) {
+        _logger.warning('Failed to leave group, not removing role');
+        return false;
+      }
+      
+      final roleSuccess = await RolesApi.removeGroupRoleApi(userId, groupId);
+      if (!roleSuccess) {
+        _logger.warning('Failed to remove group role, but user left group');
+      }
+      
+      if (leaveSuccess) {
+        Permissions.clearGroupCache(groupId);
+      }
+      
+      return leaveSuccess;
     } catch (e, stackTrace) {
       _logger.error('Error leaving group', error: e, stackTrace: stackTrace);
       throw Exception('Error leaving group: $e');
