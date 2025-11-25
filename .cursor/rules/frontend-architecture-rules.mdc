@@ -41,12 +41,17 @@ bible_study_finder_frontend/
 │   │   │   │   └── about_page.dart
 │   │   │   └── study/
 │   │   │       └── study_page.dart
-│   │   ├── services/                    # Business logic and API layer
+│   │   ├── services/                    # Business logic
 │   │   │   ├── bible_service.dart
 │   │   │   ├── church_service.dart
 │   │   │   ├── group_service.dart
 │   │   │   ├── membership_service.dart
 │   │   │   └── study_plan_service.dart
+│   │   ├── apis/                     # API layer
+│   │   │   └── bible/
+│   │   │   │   └── bible_api.dart
+│   │   │   └── church/
+│   │   │   │   └── church_api.dart
 │   │   ├── widgets/                     # Reusable UI components
 │   │   │   ├── church_card.dart
 │   │   │   └── study_group_card.dart
@@ -74,15 +79,14 @@ bible_study_finder_frontend/
   - Handle navigation between pages
 
 ### 2. Services (Business Logic Layer)
-- **Location**: `lib/services/`
-- **Purpose**: Implement business logic and API communication
+- **Location**: `lib/services/{domain}/`
+- **Purpose**: Implement business logic
 - **Responsibilities**:
-  - Make HTTP requests to backend APIs
-  - Transform API responses to domain models
+  - Validate data before sending to APIs
   - Implement caching strategies
   - Handle error handling and retry logic
   - Provide static methods or singleton instances for data access
-  - Validate data before sending to APIs
+
 
 ### 3. Models (Data Layer)
 - **Location**: `lib/models/{domain}/`
@@ -114,6 +118,13 @@ bible_study_finder_frontend/
   - Manage navigation state
 
 ### 6. Utils (Utility Layer)
+- **Location**: `lib/apis/{domain}/`
+- **Purpose**: Implement API communication
+- **Responsibilities**:
+  - Make HTTP requests to backend APIs
+  - Transform API responses to domain models
+
+### 7. Utils (Utility Layer)
 - **Location**: `lib/utils/`
 - **Purpose**: Provide shared utility functions and configuration
 - **Responsibilities**:
@@ -132,6 +143,7 @@ Pages → Widgets
 Pages → Models
 Widgets → Models
 Services → Models
+Services → Apis
 ```
 
 ### ALLOWED Calls:
@@ -142,15 +154,18 @@ Services → Models
 - ✅ **Widgets** CAN use **Models** for data display
 - ✅ **Widgets** CAN accept callbacks from **Pages**
 - ✅ **Services** CAN use **Models** for data transformation
-- ✅ **Services** CAN make HTTP requests to backend APIs
+- ✅ **Services** CAN use **Apis** to make HTTP requests to backend APIs
 - ✅ **Services** CAN use **Utils** for configuration
+- ✅ **Apis** CAN make HTTP requests to backend APIs
 - ✅ Any layer CAN use **Utils** for shared utilities
 
 ### FORBIDDEN Calls (Strictly Prohibited):
-- ❌ **Pages** CANNOT make direct HTTP requests (must use Services)
+- ❌ **Pages** CANNOT make direct HTTP requests (must call Services which will call Apis)
 - ❌ **Widgets** CANNOT call **Services** directly (must receive data via parameters)
 - ❌ **Models** CANNOT call **Services** or make HTTP requests
 - ❌ **Services** CANNOT directly manipulate UI or call **Pages**
+- ❌ **Services** CANNOT make direct HTTP requests (must use Apis)
+- ❌ **Apis** CANNOT call any other directories
 - ❌ **No reverse calls** - Lower layers CANNOT call higher layers
 - ❌ **Services** CANNOT depend on Flutter-specific UI classes (except for HTTP client)
 
@@ -160,6 +175,7 @@ Services → Models
 - **Services**: `{domain}_service.dart` (e.g., `bible_service.dart`, `group_service.dart`)
 - **Models**: `{domain}.dart` or `{entity}.dart` (e.g., `bible.dart`, `bible_study_group.dart`)
 - **Widgets**: `{name}_card.dart` or `{name}_widget.dart` (e.g., `church_card.dart`, `study_group_card.dart`)
+- **Apis**: `{domain}_apis.dart` (e.g., `church_apis.dart`, `study_group_apis.dart`)
 - **Navigation**: `app_router.dart`, `navbar.dart`
 - **Utils**: `{purpose}_helper.dart` or `app_config.dart` (e.g., `platform_helper.dart`, `app_config.dart`)
 
@@ -206,18 +222,8 @@ class BibleService {
   static const String _baseUrl = AppConfig.bibleApiUrl;
   
   static Future<List<Bible>> getBibles() async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/bibles'),
-      headers: {'api-key': AppConfig.bibleApiKey},
-    );
-    
-    if (response.statusCode == 200) {
-      final jsonData = json.decode(response.body);
-      return (jsonData['data'] as List)
-          .map((item) => Bible.fromJson(item))
-          .toList();
-    }
-    throw Exception('Failed to load bibles');
+    final result = bibleApi.getBiblesApi()
+    return result
   }
 }
 ```
@@ -274,6 +280,29 @@ class BibleCard extends StatelessWidget {
 }
 ```
 
+### api Example:
+```dart
+// lib/api/bible_api.dart
+class BibleApi {
+  static const String _baseUrl = AppConfig.bibleApiUrl;
+  
+  static Future<List<Bible>> getBiblesApi() async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/bibles'),
+      headers: {'api-key': AppConfig.bibleApiKey},
+    );
+    
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      return (jsonData['data'] as List)
+          .map((item) => Bible.fromJson(item))
+          .toList();
+    }
+    throw Exception('Failed to load bibles');
+  }
+}
+```
+
 ## State Management Guidelines
 
 - Use `StatefulWidget` for local component state
@@ -284,7 +313,8 @@ class BibleCard extends StatelessWidget {
 
 ## Error Handling
 
-- **Services** MUST handle HTTP errors and throw appropriate exceptions
+- **Apis** MUST handle HTTP errors and throw appropriate exceptions
+- **Services** MUST determine how to hand HTTP responses from Apis
 - **Pages** MUST catch service exceptions and display user-friendly error messages
 - Use try-catch blocks in async methods
 - Provide fallback UI for error states
@@ -299,6 +329,7 @@ class BibleCard extends StatelessWidget {
 5. **ALWAYS** keep widgets reusable and independent
 6. **ALWAYS** use descriptive names for files and classes
 7. **ALWAYS** follow Dart naming conventions (lowercase_with_underscores for files, PascalCase for classes)
+8. **ALWAYS** call apis seperately and do not combine functionality into a single api call. I.E. /join_group should not handle group roles and you should call /create_group_roles seperately.
 
 ## Function Size Rules
 
