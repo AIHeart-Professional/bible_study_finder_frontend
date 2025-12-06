@@ -6,9 +6,9 @@ import '../../models/group/chat_message.dart';
 import '../../models/group/group_member.dart';
 import '../../models/group/group_request.dart';
 import '../../models/group/location.dart';
-import '../../utils/app_config.dart';
-import '../../utils/logger.dart';
-import '../../utils/auth_storage.dart';
+import '../../core/config/app_config.dart';
+import '../../core/logging/logger.dart';
+import '../../core/auth/auth_storage.dart';
 
 class GroupApi {
   static final _logger = getLogger('GroupApi');

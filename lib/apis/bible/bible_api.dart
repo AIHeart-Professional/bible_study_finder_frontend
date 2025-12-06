@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../models/bible/bible.dart';
-import '../../utils/app_config.dart';
+import '../../core/config/app_config.dart';
 
 class BibleApi {
   static const String _baseUrl = AppConfig.bibleApiUrl;

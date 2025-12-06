@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../models/users/user.dart';
-import '../../utils/app_config.dart';
-import '../../utils/logger.dart';
+import '../../core/config/app_config.dart';
+import '../../core/logging/logger.dart';
 
 class UserApi {
   static final _logger = getLogger('UserApi');

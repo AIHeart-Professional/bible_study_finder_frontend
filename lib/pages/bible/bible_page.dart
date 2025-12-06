@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/bible/bible.dart';
 import '../../services/bible/bible_service.dart';
-import '../../utils/platform_helper.dart';
+import '../../core/utils/platform_helper.dart';
 
 class BiblePage extends StatefulWidget {
   const BiblePage({super.key});
@@ -175,7 +175,7 @@ class _BiblePageState extends State<BiblePage> {
         Container(
           width: 300,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
             border: Border(
               right: BorderSide(
                 color: Theme.of(context).dividerColor,
@@ -291,7 +291,7 @@ class _BiblePageState extends State<BiblePage> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),

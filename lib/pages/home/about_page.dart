@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/home/app_feature.dart';
-import '../../utils/platform_helper.dart';
+import '../../core/utils/platform_helper.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});

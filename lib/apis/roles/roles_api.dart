@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../models/group/role.dart';
 import '../../models/group/group_role.dart';
-import '../../utils/app_config.dart';
-import '../../utils/logger.dart';
-import '../../utils/auth_storage.dart';
+import '../../core/config/app_config.dart';
+import '../../core/logging/logger.dart';
+import '../../core/auth/auth_storage.dart';
 
 class RolesApi {
   static final _logger = getLogger('RolesApi');

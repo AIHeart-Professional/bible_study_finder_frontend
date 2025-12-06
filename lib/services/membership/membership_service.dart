@@ -2,9 +2,9 @@ import '../../models/group/bible_study_group.dart';
 import '../../models/group/user_group_membership.dart';
 import '../../apis/group/group_api.dart';
 import '../../apis/roles/roles_api.dart';
-import '../../utils/logger.dart';
-import '../../utils/auth_storage.dart';
-import '../../utils/permissions.dart';
+import '../../core/logging/logger.dart';
+import '../../core/auth/auth_storage.dart';
+import '../../core/permissions/permissions.dart';
 
 class MembershipService {
   static final _logger = getLogger('MembershipService');

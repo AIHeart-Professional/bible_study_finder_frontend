@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/church/church.dart';
 import '../../services/church/church_service.dart';
 import '../../widgets/church_card.dart';
-import '../../utils/platform_helper.dart';
+import '../../core/utils/platform_helper.dart';
 
 class ChurchesPage extends StatefulWidget {
   const ChurchesPage({super.key});
@@ -241,7 +241,7 @@ class _ChurchesPageState extends State<ChurchesPage> {
         Container(
           width: 350,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
             border: Border(
               right: BorderSide(
                 color: Theme.of(context).dividerColor,

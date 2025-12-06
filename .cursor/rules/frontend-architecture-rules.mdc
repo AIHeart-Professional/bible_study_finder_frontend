@@ -12,57 +12,71 @@ The frontend MUST follow this exact structure:
 
 ```
 bible_study_finder_frontend/
-├── bible_study_finder/
-│   ├── lib/
-│   │   ├── main.dart                    # Application entry point
-│   │   ├── models/                      # Data models (domain-specific)
-│   │   │   ├── bible/
-│   │   │   │   └── bible.dart
-│   │   │   ├── church/
-│   │   │   │   └── church.dart
-│   │   │   ├── group/
-│   │   │   │   ├── bible_study_group.dart
-│   │   │   │   ├── search_criteria.dart
-│   │   │   │   └── user_group_membership.dart
-│   │   │   ├── home/
-│   │   │   │   └── app_feature.dart
-│   │   │   └── study/
-│   │   │       └── study_plan.dart
-│   │   ├── pages/                       # UI pages (domain-specific)
-│   │   │   ├── bible/
-│   │   │   │   └── bible_page.dart
-│   │   │   ├── churches/
-│   │   │   │   └── churches_page.dart
-│   │   │   ├── groups/
-│   │   │   │   ├── my_groups_page.dart
-│   │   │   │   └── search_page.dart
-│   │   │   ├── home/
-│   │   │   │   ├── home_page.dart
-│   │   │   │   └── about_page.dart
-│   │   │   └── study/
-│   │   │       └── study_page.dart
-│   │   ├── services/                    # Business logic
-│   │   │   ├── bible_service.dart
-│   │   │   ├── church_service.dart
-│   │   │   ├── group_service.dart
-│   │   │   ├── membership_service.dart
-│   │   │   └── study_plan_service.dart
-│   │   ├── apis/                     # API layer
-│   │   │   └── bible/
-│   │   │   │   └── bible_api.dart
-│   │   │   └── church/
-│   │   │   │   └── church_api.dart
-│   │   ├── widgets/                     # Reusable UI components
-│   │   │   ├── church_card.dart
-│   │   │   └── study_group_card.dart
-│   │   ├── navigation/                  # Navigation and routing
+├── lib/
+│   ├── main.dart                        # Application entry point
+│   ├── core/                            # Core functionality
+│   │   ├── theme/                       # Theme system
+│   │   │   ├── app_themes.dart
+│   │   │   ├── app_colors.dart
+│   │   │   ├── theme_mode.dart
+│   │   │   ├── theme_provider.dart
+│   │   │   └── widgets/
+│   │   │       └── theme_toggle_button.dart
+│   │   ├── router/                      # Navigation
 │   │   │   ├── app_router.dart
 │   │   │   └── navbar.dart
-│   │   └── utils/                       # Utility functions
-│   │       ├── app_config.dart
+│   │   ├── config/                      # Configuration
+│   │   │   └── app_config.dart
+│   │   ├── auth/                        # Authentication
+│   │   │   └── auth_storage.dart
+│   │   ├── logging/                     # Logging
+│   │   │   └── logger.dart
+│   │   ├── permissions/                 # Permissions
+│   │   │   └── permissions.dart
+│   │   └── utils/                       # Core utilities
 │   │       └── platform_helper.dart
-│   ├── pubspec.yaml                     # Dependencies
-│   └── README.md                        # Documentation
+│   ├── constants/                       # App-wide constants
+│   │   ├── strings.dart                 # String literals
+│   │   ├── dimensions.dart              # Spacing, sizes
+│   │   └── api_endpoints.dart           # API endpoints
+│   ├── models/                          # Data models (domain-specific)
+│   │   ├── bible/
+│   │   ├── church/
+│   │   ├── group/
+│   │   ├── home/
+│   │   ├── study/
+│   │   └── users/
+│   ├── pages/                           # UI pages (domain-specific)
+│   │   ├── bible/
+│   │   ├── churches/
+│   │   ├── groups/
+│   │   ├── home/
+│   │   ├── study/
+│   │   └── auth/
+│   ├── services/                        # Business logic
+│   │   ├── bible/
+│   │   ├── church/
+│   │   ├── group/
+│   │   ├── membership/
+│   │   ├── notification/
+│   │   ├── roles/
+│   │   └── users/
+│   ├── apis/                            # API layer
+│   │   ├── bible/
+│   │   ├── church/
+│   │   ├── group/
+│   │   ├── roles/
+│   │   └── users/
+│   └── widgets/                         # Reusable UI components
+│       ├── church_card.dart
+│       ├── study_group_card.dart
+│       └── background_image.dart
+├── assets/                              # Static assets
+│   └── images/
+│       ├── background.jpg
+│       └── background-dark.jpg
+├── pubspec.yaml                         # Dependencies
+└── README.md                            # Documentation
 ```
 
 ## Architecture Layers
@@ -117,57 +131,87 @@ bible_study_finder_frontend/
   - Handle deep linking
   - Manage navigation state
 
-### 6. Utils (Utility Layer)
+### 6. APIs (Data Source Layer)
 - **Location**: `lib/apis/{domain}/`
 - **Purpose**: Implement API communication
 - **Responsibilities**:
   - Make HTTP requests to backend APIs
   - Transform API responses to domain models
+  - Handle HTTP-specific errors
+  - Implement request/response logging
 
-### 7. Utils (Utility Layer)
-- **Location**: `lib/utils/`
-- **Purpose**: Provide shared utility functions and configuration
+### 7. Core (Foundational Layer)
+- **Location**: `lib/core/`
+- **Purpose**: Provide core functionality used across the app
 - **Responsibilities**:
-  - Store app configuration (API URLs, keys, etc.)
-  - Provide helper functions (platform detection, formatting, etc.)
-  - Handle environment-specific settings
-  - Provide constants and enums
+  - **Theme System** (`core/theme/`): Theme configuration, colors, modes
+  - **Router** (`core/router/`): Navigation and routing logic
+  - **Config** (`core/config/`): App-wide configuration
+  - **Auth** (`core/auth/`): Authentication and token management
+  - **Logging** (`core/logging/`): Structured logging system
+  - **Permissions** (`core/permissions/`): Permission checking
+  - **Utils** (`core/utils/`): Core utility functions
+
+### 8. Constants (Static Data Layer)
+- **Location**: `lib/constants/`
+- **Purpose**: Centralize all static data and constants
+- **Responsibilities**:
+  - Store string literals (`strings.dart`)
+  - Define spacing and dimensions (`dimensions.dart`)
+  - Define API endpoints (`api_endpoints.dart`)
+  - Make constants easily maintainable and internationalization-ready
 
 ## Strict Call Hierarchy (MANDATORY)
 
 The call flow MUST ALWAYS follow this unidirectional hierarchy:
 
 ```
-Pages → Services → Backend API
-Pages → Widgets
-Pages → Models
-Widgets → Models
+Pages → Services → APIs → Backend
+Pages → Widgets → Models
+Pages → Core (Theme, Router, Auth, etc.)
+Services → APIs → Backend
 Services → Models
-Services → Apis
+Services → Core (Logging, Config, etc.)
+Widgets → Constants
+Services → Constants
 ```
 
 ### ALLOWED Calls:
 - ✅ **Pages** CAN call **Services** to fetch/update data
 - ✅ **Pages** CAN use **Models** for data display
 - ✅ **Pages** CAN use **Widgets** for UI composition
-- ✅ **Pages** CAN use **Navigation** for routing
+- ✅ **Pages** CAN use **Core/Router** for navigation
+- ✅ **Pages** CAN use **Core/Theme** for theme access
+- ✅ **Pages** CAN use **Core/Auth** for authentication status
+- ✅ **Pages** CAN use **Constants** for strings and dimensions
 - ✅ **Widgets** CAN use **Models** for data display
 - ✅ **Widgets** CAN accept callbacks from **Pages**
+- ✅ **Widgets** CAN use **Constants** for styling
 - ✅ **Services** CAN use **Models** for data transformation
-- ✅ **Services** CAN use **Apis** to make HTTP requests to backend APIs
-- ✅ **Services** CAN use **Utils** for configuration
-- ✅ **Apis** CAN make HTTP requests to backend APIs
-- ✅ Any layer CAN use **Utils** for shared utilities
+- ✅ **Services** CAN use **APIs** to make HTTP requests
+- ✅ **Services** CAN use **Core/Logging** for structured logging
+- ✅ **Services** CAN use **Core/Config** for configuration
+- ✅ **Services** CAN use **Constants** for API endpoints
+- ✅ **APIs** CAN make HTTP requests to backend
+- ✅ **APIs** CAN use **Core/Config** for base URLs
+- ✅ **APIs** CAN use **Core/Logging** for request logging
+- ✅ **APIs** CAN use **Core/Auth** for auth headers
+- ✅ **APIs** CAN use **Constants** for endpoint paths
+- ✅ Any layer CAN use **Core/Utils** for shared utilities
 
 ### FORBIDDEN Calls (Strictly Prohibited):
-- ❌ **Pages** CANNOT make direct HTTP requests (must call Services which will call Apis)
+- ❌ **Pages** CANNOT make direct HTTP requests (must call Services → APIs)
+- ❌ **Pages** CANNOT import from **Utils** (use **Core** instead)
 - ❌ **Widgets** CANNOT call **Services** directly (must receive data via parameters)
 - ❌ **Models** CANNOT call **Services** or make HTTP requests
 - ❌ **Services** CANNOT directly manipulate UI or call **Pages**
-- ❌ **Services** CANNOT make direct HTTP requests (must use Apis)
-- ❌ **Apis** CANNOT call any other directories
+- ❌ **Services** CANNOT make direct HTTP requests (must use APIs)
+- ❌ **APIs** CANNOT call **Services** or **Pages**
+- ❌ **APIs** CANNOT access **Models** (only return JSON data)
+- ❌ **Core** modules CANNOT call **Pages**, **Services**, or **APIs**
+- ❌ **Constants** CANNOT have any dependencies (purely static data)
 - ❌ **No reverse calls** - Lower layers CANNOT call higher layers
-- ❌ **Services** CANNOT depend on Flutter-specific UI classes (except for HTTP client)
+- ❌ **Services** CANNOT depend on Flutter UI classes (except HTTP client)
 
 ## Naming Conventions
 
@@ -323,13 +367,21 @@ class BibleApi {
 ## Code Organization Rules
 
 1. **ALWAYS** organize files by domain (bible, church, group, etc.)
-2. **ALWAYS** keep pages, models, and services in separate directories
+2. **ALWAYS** keep pages, models, services, and APIs in separate directories
 3. **ALWAYS** use domain-specific subdirectories for related files
-4. **ALWAYS** export models from domain `__init__.py` files (if using barrel exports)
-5. **ALWAYS** keep widgets reusable and independent
-6. **ALWAYS** use descriptive names for files and classes
-7. **ALWAYS** follow Dart naming conventions (lowercase_with_underscores for files, PascalCase for classes)
-8. **ALWAYS** call apis seperately and do not combine functionality into a single api call. I.E. /join_group should not handle group roles and you should call /create_group_roles seperately.
+4. **ALWAYS** place theme-related files in `core/theme/`
+5. **ALWAYS** place navigation-related files in `core/router/`
+6. **ALWAYS** place configuration in `core/config/`
+7. **ALWAYS** place authentication logic in `core/auth/`
+8. **ALWAYS** place logging in `core/logging/`
+9. **ALWAYS** place string literals in `constants/strings.dart`
+10. **ALWAYS** place spacing/dimensions in `constants/dimensions.dart`
+11. **ALWAYS** place API endpoints in `constants/api_endpoints.dart`
+12. **ALWAYS** keep widgets reusable and independent
+13. **ALWAYS** use descriptive names for files and classes
+14. **ALWAYS** follow Dart naming conventions (lowercase_with_underscores for files, PascalCase for classes)
+15. **ALWAYS** call APIs separately and do not combine functionality into a single API call
+16. **NEVER** create new files in `utils/`, `providers/`, or `navigation/` (use `core/` instead)
 
 ## Function Size Rules
 

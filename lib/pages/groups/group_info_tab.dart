@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/group/bible_study_group.dart';
 import '../../models/group/group_member.dart';
 import '../../services/group/group_service.dart';
-import '../../utils/logger.dart';
+import '../../core/logging/logger.dart';
 
 class GroupInfoTab extends StatefulWidget {
   final BibleStudyGroup group;

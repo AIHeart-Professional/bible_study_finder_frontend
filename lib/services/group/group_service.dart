@@ -6,8 +6,8 @@ import '../../models/group/group_request.dart';
 import '../../apis/group/group_api.dart';
 import '../../apis/roles/roles_api.dart';
 import '../../services/membership/membership_service.dart';
-import '../../utils/logger.dart';
-import '../../utils/auth_storage.dart';
+import '../../core/logging/logger.dart';
+import '../../core/auth/auth_storage.dart';
 
 class GroupService {
   static final _logger = getLogger('GroupService');

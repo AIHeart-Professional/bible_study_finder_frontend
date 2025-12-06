@@ -1,0 +1,13 @@
+workflows:
+  hello_world:
+    name: Hello World
+    description: This is a hello world workflow
+    steps:
+      - script:
+          name: Hello World
+          script:
+            echo "Hello World"
+      - script:
+          name: Hello World
+          script:
+            echo "Hello World"

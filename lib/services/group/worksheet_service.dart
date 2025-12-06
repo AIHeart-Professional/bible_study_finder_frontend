@@ -1,6 +1,6 @@
 import '../../models/group/worksheet.dart';
 import '../../apis/group/group_api.dart';
-import '../../utils/logger.dart';
+import '../../core/logging/logger.dart';
 
 class WorksheetService {
   static final _logger = getLogger('WorksheetService');

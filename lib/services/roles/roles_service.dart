@@ -1,8 +1,8 @@
 import '../../apis/roles/roles_api.dart';
 import '../../models/group/role.dart';
 import '../../models/group/group_role.dart';
-import '../../utils/logger.dart';
-import '../../utils/auth_storage.dart';
+import '../../core/logging/logger.dart';
+import '../../core/auth/auth_storage.dart';
 
 class RolesService {
   static final _logger = getLogger('RolesService');

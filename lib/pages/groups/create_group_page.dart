@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/group/location.dart';
 import '../../services/group/group_service.dart';
-import '../../utils/logger.dart';
+import '../../core/logging/logger.dart';
+import '../../widgets/background_image.dart';
 import 'group_detail_page.dart';
 
 class CreateGroupPage extends StatefulWidget {
@@ -110,11 +111,14 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create New Group'),
-      ),
-      body: SingleChildScrollView(
+    return BackgroundImage(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Create New Group'),
+          backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+        ),
+        body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
@@ -138,6 +142,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

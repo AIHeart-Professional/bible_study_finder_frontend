@@ -1,7 +1,7 @@
 import '../../models/group/chat_message.dart';
 import '../../apis/group/group_api.dart';
-import '../../utils/logger.dart';
-import '../../utils/auth_storage.dart';
+import '../../core/logging/logger.dart';
+import '../../core/auth/auth_storage.dart';
 
 class ChatService {
   static final _logger = getLogger('ChatService');

@@ -3,8 +3,8 @@ import '../../models/group/bible_study_group.dart';
 import '../../models/group/search_criteria.dart';
 import '../../services/group/group_service.dart';
 import '../../widgets/study_group_card.dart';
-import '../../utils/platform_helper.dart';
-import '../../utils/logger.dart';
+import '../../core/utils/platform_helper.dart';
+import '../../core/logging/logger.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -414,7 +414,7 @@ class _SearchPageState extends State<SearchPage> {
         Container(
           width: 350,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
             border: Border(
               right: BorderSide(
                 color: Theme.of(context).dividerColor,

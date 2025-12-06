@@ -1,24 +1,119 @@
-# bible_study_finder
+# Bible Study Finder
 
-## Launch Application
+A Flutter application for finding and managing Bible study groups with an integrated theme system supporting light and dark modes.
 
-- **flutter emulators --launch Pixel_7**
-- **flutter run -d emulator-5554**
+## 🚀 Launch Application
 
-A new Flutter project.
+```bash
+# Launch emulator
+flutter emulators --launch Pixel_7
 
-## Getting Started
+# Run application
+flutter run -d emulator-5554
 
-This project is a starting point for a Flutter application.
+# Run on Chrome (web)
+flutter run -d chrome
+```
 
-A few resources to get you started if this is your first Flutter project:
+## ✨ Features
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- **Theme System**: Professional light/dark mode with automatic background switching
+- **Bible Study Groups**: Find, join, and manage study groups
+- **Church Finder**: Discover churches in your area
+- **Bible Reader**: Read and study scripture with multiple translations
+- **Study Plans**: Structured Bible study plans
+- **Notifications**: Stay updated with group activities
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🎨 Theme System
+
+The app features a professional theme system with:
+- ✅ Light and Dark modes
+- ✅ System theme support
+- ✅ Automatic background image switching
+- ✅ Persistent theme preferences
+- ✅ Smooth transitions
+- ✅ Theme toggle in navigation bar
+
+### Quick Theme Usage
+
+```dart
+// Switch theme
+final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+await themeProvider.setThemeMode(AppThemeMode.dark);
+
+// Add theme toggle button
+const ThemeToggleButton()
+```
+
+📚 **Documentation**:
+- [Theme System Guide](THEME_SYSTEM.md) - Complete documentation
+- [Quick Start Guide](THEME_QUICK_START.md) - Quick reference
+- [Background Styling](BACKGROUND_STYLING_GUIDE.md) - Styling guidelines
+
+## 📁 Project Structure
+
+```
+lib/
+├── main.dart                    # App entry point
+├── navigation/                  # Navigation and routing
+├── pages/                       # UI pages (by domain)
+├── widgets/                     # Reusable UI components
+├── services/                    # Business logic
+├── apis/                        # API communication
+├── models/                      # Data models
+├── providers/                   # State management
+└── utils/                       # Utilities and helpers
+
+assets/
+└── images/
+    ├── background.jpg           # Light mode background
+    └── background-dark.jpg      # Dark mode background
+```
+
+## 🛠️ Getting Started
+
+### Prerequisites
+
+- Flutter SDK (^3.9.2)
+- Dart SDK
+- Android Studio / VS Code
+- Firebase account (for notifications)
+
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   flutter pub get
+   ```
+3. Configure Firebase (see `API_SETUP.md`)
+4. Run the app:
+   ```bash
+   flutter run
+   ```
+
+## 📦 Dependencies
+
+Key packages:
+- `provider: ^6.1.1` - State management
+- `shared_preferences: ^2.2.2` - Local storage
+- `firebase_core: ^3.0.0` - Firebase integration
+- `firebase_messaging: ^15.0.0` - Push notifications
+- `http: ^1.1.0` - HTTP requests
+- `go_router: ^14.2.7` - Navigation
+
+See `pubspec.yaml` for complete list.
+
+## 🏗️ Architecture
+
+The app follows a clean architecture pattern:
+- **Pages**: UI layer
+- **Services**: Business logic
+- **APIs**: Backend communication
+- **Models**: Data structures
+- **Providers**: State management
+
+See [Frontend Architecture Rules](.cursor/rules/frontend-architecture-rules.mdc) for details.
 
 TODO:
 High priority:

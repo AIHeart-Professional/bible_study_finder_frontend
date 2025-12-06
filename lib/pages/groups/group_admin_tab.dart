@@ -4,8 +4,8 @@ import '../../models/group/role.dart';
 import '../../services/group/group_service.dart';
 import '../../apis/group/group_api.dart';
 import '../../apis/roles/roles_api.dart';
-import '../../utils/logger.dart';
-import '../../utils/auth_storage.dart';
+import '../../core/logging/logger.dart';
+import '../../core/auth/auth_storage.dart';
 
 class GroupAdminTab extends StatefulWidget {
   final String groupId;

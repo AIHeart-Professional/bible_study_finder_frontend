@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/group/bible_study_group.dart';
 import '../../models/group/user_group_membership.dart';
 import '../../services/membership/membership_service.dart';
+import '../../core/theme/app_colors.dart';
 import 'group_detail_page.dart';
 
 class MyGroupsPage extends StatefulWidget {
@@ -225,6 +226,7 @@ class _MyGroupsPageState extends State<MyGroupsPage>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -236,13 +238,20 @@ class _MyGroupsPageState extends State<MyGroupsPage>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.secondary,
+                    AppColors.of(context).brandPrimary.withOpacity(0.85),
+                    AppColors.of(context).brandSecondary.withOpacity(0.85),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.of(context).shadowDark,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 children: [

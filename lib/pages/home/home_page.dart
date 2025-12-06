@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../utils/auth_storage.dart';
-import '../../utils/logger.dart';
+import '../../core/auth/auth_storage.dart';
+import '../../core/logging/logger.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -206,7 +206,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget _buildChatArea(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.surface.withOpacity(0.7),
       ),
       child: Center(
         child: Column(
@@ -241,7 +241,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget _buildChatInput(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -266,7 +266,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     ),
                   ),
                   filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  fillColor: Colors.white.withOpacity(0.9),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 12,

@@ -158,6 +158,8 @@ class _StudyGroupCardState extends State<StudyGroupCard> {
   Widget build(BuildContext context) {
     return Card(
       clipBehavior: Clip.antiAlias,
+      elevation: 3,
+      color: Theme.of(context).colorScheme.surface.withOpacity(0.95),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

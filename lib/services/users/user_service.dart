@@ -1,6 +1,6 @@
 import '../../models/users/user.dart';
 import '../../apis/users/user_api.dart';
-import '../../utils/logger.dart';
+import '../../core/logging/logger.dart';
 
 class UserService {
   static final _logger = getLogger('UserService');

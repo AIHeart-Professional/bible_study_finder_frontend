@@ -5,8 +5,9 @@ import '../../models/group/chat_message.dart';
 import '../../services/group/group_service.dart';
 import '../../services/group/worksheet_service.dart';
 import '../../services/group/chat_service.dart';
-import '../../utils/logger.dart';
-import '../../utils/permissions.dart';
+import '../../core/logging/logger.dart';
+import '../../core/permissions/permissions.dart';
+import '../../widgets/background_image.dart';
 import 'group_info_tab.dart';
 import 'group_chats_tab.dart';
 import 'group_resources_tab.dart';
@@ -145,11 +146,14 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Widget _buildLoadingState() {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Loading...'),
-      ),
-      body: const Center(
+    return BackgroundImage(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Loading...'),
+          backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+        ),
+        body: const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -158,16 +162,20 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             Text('Loading group details...'),
           ],
         ),
+        ),
       ),
     );
   }
 
   Widget _buildErrorState() {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Error'),
-      ),
-      body: Center(
+    return BackgroundImage(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Error'),
+          backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+        ),
+        body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -200,26 +208,34 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
             ],
           ),
         ),
+        ),
       ),
     );
   }
 
   Widget _buildEmptyState() {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Group Not Found'),
-      ),
-      body: const Center(
+    return BackgroundImage(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Group Not Found'),
+          backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+        ),
+        body: const Center(
         child: Text('Group not found'),
+        ),
       ),
     );
   }
 
   Widget _buildContent() {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_group?.name ?? ''),
-      ),
+    return BackgroundImage(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(_group?.name ?? ''),
+          backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+        ),
            body: PageView(
              controller: _pageController,
              onPageChanged: _onPageChanged,
@@ -230,6 +246,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         onTap: _onTabTapped,
         type: BottomNavigationBarType.fixed,
         items: _buildTabItems(),
+      ),
       ),
     );
   }

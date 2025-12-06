@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/users/user_service.dart';
-import '../../utils/auth_storage.dart';
+import '../../core/auth/auth_storage.dart';
+import '../../widgets/background_image.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -188,11 +189,14 @@ class _AuthPageState extends State<AuthPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_isLoginMode ? 'Login' : 'Create Account'),
-      ),
-      body: SingleChildScrollView(
+    return BackgroundImage(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(_isLoginMode ? 'Login' : 'Create Account'),
+          backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+        ),
+        body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
           key: _formKey,
@@ -217,6 +221,7 @@ class _AuthPageState extends State<AuthPage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/group/group_request.dart';
 import '../services/group/group_service.dart';
-import '../utils/auth_storage.dart';
-import '../utils/logger.dart';
+import '../core/auth/auth_storage.dart';
+import '../core/logging/logger.dart';
 
 class GroupRequestNotificationIcon extends StatefulWidget {
   final VoidCallback? onTap;

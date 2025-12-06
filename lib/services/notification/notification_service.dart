@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import '../../utils/logger.dart';
-import '../../utils/auth_storage.dart';
+import '../../core/logging/logger.dart';
+import '../../core/auth/auth_storage.dart';
 import '../../apis/users/users_api.dart';
 
 class NotificationService {
