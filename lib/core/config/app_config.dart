@@ -101,3 +101,4 @@ class AppConfig {
   static String getBackendApiUrlForLogging() => backendApiUrl;
 }
 
+

@@ -97,3 +97,4 @@ class AppDimensions {
   static const int durationSlow = 500;
 }
 
+

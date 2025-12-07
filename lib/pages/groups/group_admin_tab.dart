@@ -6,6 +6,8 @@ import '../../apis/group/group_api.dart';
 import '../../apis/roles/roles_api.dart';
 import '../../core/logging/logger.dart';
 import '../../core/auth/auth_storage.dart';
+import '../../core/permissions/permissions.dart';
+import 'manage_roles_page.dart';
 
 class GroupAdminTab extends StatefulWidget {
   final String groupId;
@@ -26,6 +28,7 @@ class _GroupAdminTabState extends State<GroupAdminTab> {
   bool _isLoading = true;
   String? _error;
   String? _currentUserId;
+  bool _isAdmin = false;
 
   @override
   void initState() {
@@ -41,11 +44,13 @@ class _GroupAdminTabState extends State<GroupAdminTab> {
 
       final members = await GroupService.getGroupMembers(widget.groupId);
       final roles = await RolesApi.getRolesApi();
+      final userRoles = await Permissions.getUserRoles(widget.groupId);
 
       if (mounted) {
         setState(() {
           _members = members;
           _availableRoles = roles;
+          _isAdmin = userRoles.contains('admin');
           _isLoading = false;
         });
       }
@@ -227,14 +232,49 @@ class _GroupAdminTabState extends State<GroupAdminTab> {
 
     return RefreshIndicator(
       onRefresh: _loadData,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: _members.length,
-        itemBuilder: (context, index) {
-          return _buildMemberCard(_members[index]);
-        },
+      child: Column(
+        children: [
+          if (_isAdmin) _buildModifyRolesButton(),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemCount: _members.length,
+              itemBuilder: (context, index) {
+                return _buildMemberCard(_members[index]);
+              },
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  Widget _buildModifyRolesButton() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: _navigateToManageRoles,
+          icon: const Icon(Icons.admin_panel_settings),
+          label: const Text('Modify Roles'),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToManageRoles() {
+    _logger.debug('Navigating to Manage Roles page');
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ManageRolesPage(groupId: widget.groupId),
+      ),
+    ).then((_) {
+      _loadData();
+    });
   }
 
   Widget _buildMemberCard(GroupMember member) {

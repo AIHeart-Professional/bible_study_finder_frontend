@@ -307,5 +307,111 @@ class RolesApi {
   static void _logApiError(String method, String url, dynamic error) {
     _logger.error('API call failed: $method $url', error: error);
   }
+
+  static Future<List<dynamic>> getPermissionsApi() async {
+    final stopwatch = Stopwatch()..start();
+    final url = _buildGetPermissionsUrl();
+
+    _logger.debug('Fetching permissions from: $url');
+
+    try {
+      final response = await _sendGetPermissionsRequest(url);
+      stopwatch.stop();
+      _logApiCall('GET', url.toString(), response.statusCode, stopwatch);
+      return _handleGetPermissionsResponse(response);
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      _logApiError('GET', url.toString(), e);
+      _logger.error('Error fetching permissions', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  static Future<bool> modifyRoleApi(
+      String roleId, String? name, List<String>? permissions) async {
+    final stopwatch = Stopwatch()..start();
+    final url = _buildModifyRoleUrl();
+
+    _logger.debug('Modifying role: roleId=$roleId, name=$name, permissions=$permissions');
+
+    try {
+      final response = await _sendModifyRoleRequest(url, roleId, name, permissions);
+      stopwatch.stop();
+      _logApiCall('POST', url.toString(), response.statusCode, stopwatch);
+      return _handleModifyRoleResponse(response);
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      _logApiError('POST', url.toString(), e);
+      _logger.error('Error modifying role', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  static Uri _buildGetPermissionsUrl() {
+    return Uri.parse('${AppConfig.getBackendBaseUrl()}/roles/get_permissions');
+  }
+
+  static Uri _buildModifyRoleUrl() {
+    return Uri.parse('${AppConfig.getBackendBaseUrl()}/roles/modify_role');
+  }
+
+  static Future<http.Response> _sendGetPermissionsRequest(Uri url) async {
+    final headers = await AuthStorage.getAuthHeaders();
+    return await http.get(url, headers: headers).timeout(AppConfig.apiTimeout);
+  }
+
+  static Future<http.Response> _sendModifyRoleRequest(
+      Uri url, String roleId, String? name, List<String>? permissions) async {
+    final authHeaders = await AuthStorage.getAuthHeaders();
+    final headers = {
+      ...authHeaders,
+      'Content-Type': 'application/json',
+    };
+    final body = json.encode({
+      'roleId': roleId,
+      if (name != null) 'name': name,
+      if (permissions != null) 'permissions': permissions,
+    });
+    return await http
+        .post(url, headers: headers, body: body)
+        .timeout(AppConfig.apiTimeout);
+  }
+
+  static List<dynamic> _handleGetPermissionsResponse(http.Response response) {
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      final success = jsonData['success'] ?? false;
+      final permissions = jsonData['permissions'] ?? [];
+
+      if (success) {
+        _logger.debug('Fetched ${permissions.length} permissions');
+        return permissions as List<dynamic>;
+      } else {
+        _logger.warning('API returned success=false');
+        return [];
+      }
+    } else {
+      _logger.error('HTTP error: ${response.statusCode}');
+      return [];
+    }
+  }
+
+  static bool _handleModifyRoleResponse(http.Response response) {
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      final success = jsonData['success'] ?? false;
+      if (success) {
+        _logger.debug('Successfully modified role');
+        return true;
+      } else {
+        final message = jsonData['message'] ?? 'Failed to modify role';
+        _logger.warning('API returned success=false: $message');
+        return false;
+      }
+    } else {
+      _logger.error('HTTP error: ${response.statusCode}');
+      return false;
+    }
+  }
 }
 

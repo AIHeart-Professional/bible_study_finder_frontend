@@ -34,6 +34,35 @@ class RolesService {
     }
   }
 
+  static Future<List<dynamic>> getAllPermissions() async {
+    _logger.debug('Fetching all permissions');
+    try {
+      final permissions = await RolesApi.getPermissionsApi();
+      _logger.info('Retrieved ${permissions.length} permissions');
+      return permissions;
+    } catch (e, stackTrace) {
+      _logger.error('Error fetching permissions', error: e, stackTrace: stackTrace);
+      return [];
+    }
+  }
+
+  static Future<bool> modifyRole(
+      String roleId, String? name, List<String>? permissions) async {
+    _logger.debug('Modifying role: roleId=$roleId');
+    try {
+      final success = await RolesApi.modifyRoleApi(roleId, name, permissions);
+      if (success) {
+        _logger.info('Successfully modified role: $roleId');
+      } else {
+        _logger.warning('Failed to modify role: $roleId');
+      }
+      return success;
+    } catch (e, stackTrace) {
+      _logger.error('Error modifying role', error: e, stackTrace: stackTrace);
+      return false;
+    }
+  }
+
   static Future<String?> _getCurrentUserId() async {
     return await AuthStorage.getUserId();
   }

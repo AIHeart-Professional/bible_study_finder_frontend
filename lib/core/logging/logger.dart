@@ -333,3 +333,4 @@ BibleStudyLogger getLogger(String name) {
   return BibleStudyLogger.getLogger(name);
 }
 
+

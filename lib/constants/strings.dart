@@ -180,3 +180,4 @@ class AppStrings {
   static const String askAnything = 'Ask me anything or use the chatbox to navigate the app';
 }
 
+

@@ -12,7 +12,7 @@ class Role {
   factory Role.fromJson(Map<String, dynamic> json) {
     return Role(
       id: _extractId(json['id'] ?? json['_id'] ?? ''),
-      name: json['name'] ?? '',
+      name: json['name'] ?? json['roleName'] ?? '',
       permissions: (json['permissions'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??

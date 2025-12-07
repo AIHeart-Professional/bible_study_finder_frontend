@@ -3,6 +3,7 @@ import '../../models/group/search_criteria.dart';
 import '../../models/group/location.dart';
 import '../../models/group/group_member.dart';
 import '../../models/group/group_request.dart';
+import '../../models/group/role.dart';
 import '../../apis/group/group_api.dart';
 import '../../apis/roles/roles_api.dart';
 import '../../services/membership/membership_service.dart';
@@ -313,6 +314,39 @@ class GroupService {
       return requests;
     } catch (e, stackTrace) {
       _logger.error('Error fetching group requests',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  static Future<List<Role>> getGroupRoleConfigs(String groupId) async {
+    _logger.debug('getGroupRoleConfigs called with groupId=$groupId');
+    try {
+      final roles = await GroupApi.getGroupRoleConfigsApi(groupId);
+      _logger.info('Successfully loaded ${roles.length} group role configs');
+      return roles;
+    } catch (e, stackTrace) {
+      _logger.error('Error fetching group role configs',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  static Future<bool> updateGroupRoleConfig(
+      String groupId, String roleName, List<String> permissions) async {
+    _logger.debug(
+        'updateGroupRoleConfig called with groupId=$groupId, roleName=$roleName');
+    try {
+      final success = await GroupApi.updateGroupRoleConfigApi(
+          groupId, roleName, permissions);
+      if (success) {
+        _logger.info('Successfully updated group role config: $roleName');
+      } else {
+        _logger.warning('Failed to update group role config');
+      }
+      return success;
+    } catch (e, stackTrace) {
+      _logger.error('Error updating group role config',
           error: e, stackTrace: stackTrace);
       rethrow;
     }

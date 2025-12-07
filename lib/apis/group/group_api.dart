@@ -5,6 +5,7 @@ import '../../models/group/worksheet.dart';
 import '../../models/group/chat_message.dart';
 import '../../models/group/group_member.dart';
 import '../../models/group/group_request.dart';
+import '../../models/group/role.dart';
 import '../../models/group/location.dart';
 import '../../core/config/app_config.dart';
 import '../../core/logging/logger.dart';
@@ -666,6 +667,126 @@ class GroupApi {
       url: url,
       error: error.toString(),
     );
+  }
+
+  static Future<List<Role>> getGroupRoleConfigsApi(String groupId) async {
+    final stopwatch = Stopwatch()..start();
+    final url = _buildGetGroupRoleConfigsUrl(groupId);
+
+    _logger.debug('Fetching group role configs: groupId=$groupId');
+
+    try {
+      final response = await _sendGetGroupRoleConfigsRequest(url);
+      stopwatch.stop();
+      _logApiCall('GET', url.toString(), response.statusCode, stopwatch);
+      return _handleGetGroupRoleConfigsResponse(response);
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      _logApiError('GET', url.toString(), e);
+      _logger.error('Error fetching group role configs',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  static Future<bool> updateGroupRoleConfigApi(
+      String groupId, String roleName, List<String> permissions) async {
+    final stopwatch = Stopwatch()..start();
+    final url = _buildUpdateGroupRoleConfigUrl();
+
+    _logger.debug(
+        'Updating group role config: groupId=$groupId, roleName=$roleName');
+
+    try {
+      final response = await _sendUpdateGroupRoleConfigRequest(
+          url, groupId, roleName, permissions);
+      stopwatch.stop();
+      _logApiCall('POST', url.toString(), response.statusCode, stopwatch);
+      return _handleUpdateGroupRoleConfigResponse(response);
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      _logApiError('POST', url.toString(), e);
+      _logger.error('Error updating group role config',
+          error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  static Uri _buildGetGroupRoleConfigsUrl(String groupId) {
+    return Uri.parse(
+        '${AppConfig.getBackendBaseUrl()}/groups/get_group_role_configs?groupId=$groupId');
+  }
+
+  static Uri _buildUpdateGroupRoleConfigUrl() {
+    return Uri.parse(
+        '${AppConfig.getBackendBaseUrl()}/groups/update_group_role_config');
+  }
+
+  static Future<http.Response> _sendGetGroupRoleConfigsRequest(
+      Uri url) async {
+    final headers = await AuthStorage.getAuthHeaders();
+    return await http.get(url, headers: headers).timeout(AppConfig.apiTimeout);
+  }
+
+  static Future<http.Response> _sendUpdateGroupRoleConfigRequest(
+      Uri url, String groupId, String roleName, List<String> permissions) async {
+    final authHeaders = await AuthStorage.getAuthHeaders();
+    final headers = {
+      ...authHeaders,
+      'Content-Type': 'application/json',
+    };
+    final body = json.encode({
+      'groupId': groupId,
+      'roleName': roleName,
+      'permissions': permissions,
+    });
+    return await http
+        .post(url, headers: headers, body: body)
+        .timeout(AppConfig.apiTimeout);
+  }
+
+  static List<Role> _handleGetGroupRoleConfigsResponse(
+      http.Response response) {
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      final success = jsonData['success'] ?? false;
+      if (success) {
+        final rolesList = jsonData['groupRoles'] as List? ?? [];
+        _logger.info(
+            'Successfully loaded ${rolesList.length} group role configs');
+        return rolesList
+            .map((item) => Role.fromJson(item as Map<String, dynamic>))
+            .toList();
+      } else {
+        final message =
+            jsonData['message'] ?? 'Failed to load group role configs';
+        _logger.warning('API returned success=false: $message');
+        throw Exception(message);
+      }
+    } else {
+      _logger.error('HTTP error: ${response.statusCode}');
+      throw Exception(
+          'Failed to load group role configs: HTTP ${response.statusCode}');
+    }
+  }
+
+  static bool _handleUpdateGroupRoleConfigResponse(http.Response response) {
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      final success = jsonData['success'] ?? false;
+      if (success) {
+        _logger.info('Successfully updated group role config');
+        return true;
+      } else {
+        final message =
+            jsonData['message'] ?? 'Failed to update group role config';
+        _logger.warning('API returned success=false: $message');
+        return false;
+      }
+    } else {
+      _logger.error('HTTP error: ${response.statusCode}');
+      return false;
+    }
   }
 }
 
