@@ -1,13 +1,47 @@
 workflows:
-  hello_world:
-    name: Hello World
-    description: This is a hello world workflow
-    steps:
-      - script:
-          name: Hello World
-          script:
-            echo "Hello World"
-      - script:
-          name: Hello World
-          script:
-            echo "Hello World"
+  flutter_build:
+    name: Flutter Build
+    description: Build Flutter app for production with Render API configuration
+    instance_type: mac_mini_m1
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+          source: true
+    environment:
+      groups:
+        - app_store_credentials
+      vars:
+        # Set your Render API URL here
+        # Replace with your actual Render backend URL
+        BACKEND_API_URL: "https://your-backend-app.onrender.com"
+        APP_ENVIRONMENT: "production"
+      flutter: stable
+    scripts:
+      - name: Install dependencies
+        script: |
+          flutter pub get
+      - name: Build iOS
+        script: |
+          flutter build ios \
+            --release \
+            --dart-define=BACKEND_API_URL="$BACKEND_API_URL" \
+            --dart-define=APP_ENVIRONMENT="$APP_ENVIRONMENT"
+      - name: Build Android
+        script: |
+          flutter build apk \
+            --release \
+            --dart-define=BACKEND_API_URL="$BACKEND_API_URL" \
+            --dart-define=APP_ENVIRONMENT="$APP_ENVIRONMENT"
+      - name: Build Web
+        script: |
+          flutter build web \
+            --release \
+            --dart-define=BACKEND_API_URL="$BACKEND_API_URL" \
+            --dart-define=APP_ENVIRONMENT="$APP_ENVIRONMENT"
+    artifacts:
+      - build/**/outputs/**/*.apk
+      - build/**/outputs/**/*.ipa
+      - build/web/**

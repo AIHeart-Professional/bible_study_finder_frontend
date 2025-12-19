@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../models/bible/bible.dart';
 import '../../core/config/app_config.dart';
+import '../../core/logging/logger.dart';
 
 class BibleApi {
+  static final _logger = getLogger('BibleApi');
   static const String _baseUrl = AppConfig.bibleApiUrl;
   static const String _apiKey = AppConfig.bibleApiKey;
 
@@ -89,22 +91,52 @@ class BibleApi {
 
   static Future<BibleResponse<Verse>> getVersesApi(
       String bibleId, String chapterId) async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/bibles/$bibleId/chapters/$chapterId/verses'),
-      headers: {
-        'api-key': _apiKey,
-        'Content-Type': 'application/json',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final jsonData = json.decode(response.body);
-      return BibleResponse<Verse>.fromJson(
-        jsonData,
-        (json) => Verse.fromJson(json),
+    _logger.debug('getVersesApi called with bibleId=$bibleId, chapterId=$chapterId');
+    
+    final url = '$_baseUrl/bibles/$bibleId/chapters/$chapterId/verses';
+    _logger.debug('Making API call: GET $url');
+    
+    final stopwatch = Stopwatch()..start();
+    
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'api-key': _apiKey,
+          'Content-Type': 'application/json',
+        },
       );
-    } else {
-      throw Exception('Failed to load verses: ${response.statusCode}');
+      
+      stopwatch.stop();
+      
+      _logger.logApiCall(
+        method: 'GET',
+        url: url,
+        statusCode: response.statusCode,
+        responseTime: stopwatch.elapsedMilliseconds / 1000.0,
+      );
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        _logger.debug('Successfully parsed verses response');
+        
+        return BibleResponse<Verse>.fromJson(
+          jsonData,
+          (json) => Verse.fromJson(json),
+        );
+      } else {
+        _logger.error('API returned error status: ${response.statusCode}');
+        throw Exception('Failed to load verses: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      stopwatch.stop();
+      _logger.logApiCall(
+        method: 'GET',
+        url: url,
+        error: e.toString(),
+      );
+      _logger.error('Error in getVersesApi', error: e, stackTrace: stackTrace);
+      rethrow;
     }
   }
 }

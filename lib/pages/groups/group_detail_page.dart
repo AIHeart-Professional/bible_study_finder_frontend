@@ -61,6 +61,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   Future<void> _loadChatMessages() async {
+    _logger.debug('Loading chat messages for group: ${widget.groupId}');
     try {
       final messages = await ChatService.getChat(widget.groupId);
       if (mounted) {
@@ -68,8 +69,24 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           _chatMessages = _sortMessagesByDate(messages);
         });
       }
+      _logger.info('Successfully loaded ${messages.length} chat messages');
     } catch (e, stackTrace) {
       _logger.error('Error loading chat messages', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _loadWorksheets() async {
+    _logger.debug('Loading worksheets for group: ${widget.groupId}');
+    try {
+      final worksheets = await WorksheetService.getWorksheets(widget.groupId);
+      if (mounted) {
+        setState(() {
+          _worksheets = worksheets;
+        });
+      }
+      _logger.info('Successfully loaded ${worksheets.length} worksheets');
+    } catch (e, stackTrace) {
+      _logger.error('Error loading worksheets', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -117,11 +134,18 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
   }
 
   void _onPageChanged(int index) {
+    _logger.debug('Tab changed to index: $index');
     setState(() {
       _currentTabIndex = index;
     });
+    _loadTabData(index);
+  }
+
+  void _loadTabData(int index) {
     if (index == 1 && _chatMessages.isEmpty) {
       _loadChatMessages();
+    } else if (index == 2) {
+      _loadWorksheets();
     }
   }
 
@@ -263,6 +287,7 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         worksheets: _worksheets,
         groupId: widget.groupId,
         userPermissions: _userPermissions,
+        onRefresh: _loadWorksheets,
       ),
     ];
 

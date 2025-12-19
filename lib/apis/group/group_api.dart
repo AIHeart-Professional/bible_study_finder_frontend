@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:file_picker/file_picker.dart';
 import '../../models/group/bible_study_group.dart';
 import '../../models/group/worksheet.dart';
 import '../../models/group/chat_message.dart';
@@ -785,6 +786,132 @@ class GroupApi {
       }
     } else {
       _logger.error('HTTP error: ${response.statusCode}');
+      return false;
+    }
+  }
+
+  /// Upload a worksheet file (PDF or DOCX)
+  static Future<bool> uploadWorksheet({
+    required String groupId,
+    required String title,
+    required PlatformFile file,
+  }) async {
+    _logger.debug('uploadWorksheet called with groupId=$groupId, title=$title, fileName=${file.name}');
+    
+    try {
+      final url = Uri.parse('${AppConfig.getBackendBaseUrl()}/groups/upload_worksheet');
+      _logger.debug('Uploading to URL: $url');
+
+      // Get auth headers
+      final headers = await AuthStorage.getAuthHeaders();
+      
+      // Create multipart request
+      final request = http.MultipartRequest('POST', url);
+      request.headers.addAll(headers);
+      request.fields['groupId'] = groupId;
+      request.fields['title'] = title;
+
+      // Add file
+      if (file.bytes != null) {
+        _logger.debug('Adding file from bytes: ${file.bytes!.length} bytes');
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'file',
+            file.bytes!,
+            filename: file.name,
+          ),
+        );
+      } else if (file.path != null) {
+        _logger.debug('Adding file from path: ${file.path}');
+        request.files.add(
+          await http.MultipartFile.fromPath('file', file.path!),
+        );
+      } else {
+        _logger.error('File has no data (no bytes or path)');
+        return false;
+      }
+
+      _logger.debug('Sending multipart request...');
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      _logger.debug('Upload response status: ${response.statusCode}');
+      _logger.debug('Upload response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        final success = jsonResponse['success'] ?? false;
+        
+        if (success) {
+          _logger.info('Worksheet uploaded successfully');
+          return true;
+        } else {
+          _logger.warning('Upload failed: ${jsonResponse['message']}');
+          return false;
+        }
+      } else {
+        _logger.error('Upload failed with status ${response.statusCode}: ${response.body}');
+        return false;
+      }
+    } catch (e, stackTrace) {
+      _logger.error('Error uploading worksheet: $e', error: e, stackTrace: stackTrace);
+      return false;
+    }
+  }
+
+  /// Create a worksheet with text/HTML content (no file upload)
+  static Future<bool> createWorksheetText({
+    required String groupId,
+    required String title,
+    required String content,
+  }) async {
+    _logger.debug('createWorksheetText called with groupId=$groupId, title=$title');
+    
+    try {
+      final url = Uri.parse('${AppConfig.getBackendBaseUrl()}/groups/create_worksheet_text');
+      _logger.debug('Posting to URL: $url');
+
+      // Get auth headers
+      final authHeaders = await AuthStorage.getAuthHeaders();
+      final headers = {
+        ...authHeaders,
+        'Content-Type': 'application/json',
+      };
+
+      final body = json.encode({
+        'groupId': groupId,
+        'title': title,
+        'content': content,
+      });
+
+      _logger.debug('Request body length: ${body.length} characters');
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      ).timeout(AppConfig.apiTimeout);
+
+      _logger.debug('Create worksheet response status: ${response.statusCode}');
+      _logger.debug('Create worksheet response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        final success = jsonResponse['success'] ?? false;
+        
+        if (success) {
+          _logger.info('Worksheet created successfully');
+          return true;
+        } else {
+          _logger.warning('Create worksheet failed: ${jsonResponse['message']}');
+          return false;
+        }
+      } else {
+        _logger.error('Create worksheet failed with status ${response.statusCode}: ${response.body}');
+        return false;
+      }
+    } catch (e, stackTrace) {
+      _logger.error('Error creating worksheet: $e', error: e, stackTrace: stackTrace);
       return false;
     }
   }

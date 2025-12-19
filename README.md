@@ -13,6 +13,9 @@ flutter run -d emulator-5554
 
 # Run on Chrome (web)
 flutter run -d chrome
+
+# Test in app browser (web)
+flutter run -d chrome --release
 ```
 
 ## ✨ Features

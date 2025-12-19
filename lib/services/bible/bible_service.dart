@@ -1,7 +1,9 @@
 import '../../models/bible/bible.dart';
 import '../../apis/bible/bible_api.dart';
+import '../../core/logging/logger.dart';
 
 class BibleService {
+  static final _logger = getLogger('BibleService');
   static List<Bible>? _biblesCache;
   static Map<String, List<Book>> _booksCache = {};
   static Map<String, List<Chapter>> _chaptersCache = {};
@@ -195,10 +197,18 @@ class BibleService {
   }
 
   static Future<List<Verse>> getVerses(String bibleId, String chapterId) async {
+    _logger.debug('getVerses called with bibleId=$bibleId, chapterId=$chapterId');
+    
     try {
+      _logger.debug('Fetching verses from API');
       final verseResponse = await BibleApi.getVersesApi(bibleId, chapterId);
+      
+      _logger.info('Successfully fetched ${verseResponse.data.length} verses');
+      _logger.debug('First verse: ${verseResponse.data.isNotEmpty ? verseResponse.data.first.id : 'none'}');
+      
       return verseResponse.data;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _logger.error('Error fetching verses', error: e, stackTrace: stackTrace);
       throw Exception('Error fetching verses: $e');
     }
   }

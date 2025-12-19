@@ -146,12 +146,35 @@ class Verse {
   });
 
   factory Verse.fromJson(Map<String, dynamic> json) {
+    final verseId = json['id'] ?? '';
+    final extractedNumber = _extractVerseNumber(verseId, json);
+    
     return Verse(
-      id: json['id'] ?? '',
-      number: json['number'] ?? '',
+      id: verseId,
+      number: extractedNumber,
       text: json['text'] ?? '',
       chapterId: json['chapterId'] ?? '',
     );
+  }
+  
+  static String _extractVerseNumber(String verseId, Map<String, dynamic> json) {
+    if (json['number'] != null && json['number'].toString().isNotEmpty) {
+      return json['number'].toString();
+    }
+    
+    if (verseId.isNotEmpty) {
+      final parts = verseId.split('.');
+      if (parts.length >= 3) {
+        return parts.last;
+      }
+    }
+    
+    final reference = json['reference'] as String?;
+    if (reference != null && reference.contains(':')) {
+      return reference.split(':').last.trim();
+    }
+    
+    return '0';
   }
 
   Map<String, dynamic> toJson() {

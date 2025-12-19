@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/bible/bible.dart';
 import '../../services/bible/bible_service.dart';
 import '../../core/utils/platform_helper.dart';
+import '../../core/logging/logger.dart';
 
 class BiblePage extends StatefulWidget {
   const BiblePage({super.key});
@@ -11,6 +12,8 @@ class BiblePage extends StatefulWidget {
 }
 
 class _BiblePageState extends State<BiblePage> {
+  static final _logger = getLogger('BiblePage');
+  
   List<Bible> _bibles = [];
   List<Book> _books = [];
   List<Chapter> _chapters = [];
@@ -109,16 +112,176 @@ class _BiblePageState extends State<BiblePage> {
     });
 
     try {
+      _logger.debug('Loading verses for chapter: $_selectedChapterId');
       final verses = await BibleService.getVerses(_selectedBibleId!, _selectedChapterId!);
+      
       setState(() {
         _verses = verses;
         _isLoadingVerses = false;
       });
-    } catch (e) {
+      
+      _logger.info('Loaded ${verses.length} verses');
+    } catch (e, stackTrace) {
+      _logger.error('Error loading verses', error: e, stackTrace: stackTrace);
       setState(() {
         _isLoadingVerses = false;
       });
     }
+  }
+  
+  Future<void> _onVerseClick(Verse verse) async {
+    _logger.debug('Verse clicked: ${verse.verseNumber}');
+    
+    if (_selectedBibleId == null || _selectedChapterId == null) return;
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Loading chapter content...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      _logger.debug('Loading chapter content starting at verse: ${verse.verseNumber}');
+      final content = await BibleService.getChapterContent(_selectedBibleId!, _selectedChapterId!);
+      
+      _logger.info('Loaded chapter content successfully');
+      
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      // Show chapter content in a new dialog starting at the verse
+      _showChapterContentDialog(content, verse.verseNumber);
+    } catch (e, stackTrace) {
+      _logger.error('Error loading chapter content', error: e, stackTrace: stackTrace);
+      
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      // Show error dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to load chapter content: $e'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
+  
+  void _showChapterContentDialog(String content, int startVerseNumber) {
+    final shouldUseWebLayout = PlatformHelper.shouldUseWebLayout(context);
+    final bookName = _books.firstWhere((book) => book.id == _selectedBookId).name;
+    final chapterNumber = _chapters.firstWhere((chapter) => chapter.id == _selectedChapterId).number;
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: EdgeInsets.all(shouldUseWebLayout ? 40 : 16),
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: shouldUseWebLayout ? 800 : double.infinity,
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(28),
+                    topRight: Radius.circular(28),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.menu_book,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '$bookName $chapterNumber (Starting at verse $startVerseNumber)',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(shouldUseWebLayout ? 24 : 16),
+                  child: SelectableText(
+                    content,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontSize: shouldUseWebLayout ? 18 : 16,
+                      height: 1.8,
+                    ),
+                  ),
+                ),
+              ),
+              
+              // Footer with actions
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _onBibleChanged(String? bibleId) {
@@ -217,7 +380,7 @@ class _BiblePageState extends State<BiblePage> {
                         items: _bibles.map((bible) {
                           return DropdownMenuItem<String>(
                             value: bible.id,
-                            child: Text(bible.name),
+                            child: Text(bible.abbreviation),
                           );
                         }).toList(),
                         onChanged: _onBibleChanged,
@@ -315,7 +478,7 @@ class _BiblePageState extends State<BiblePage> {
                       items: _bibles.map((bible) {
                         return DropdownMenuItem<String>(
                           value: bible.id,
-                          child: Text(bible.name),
+                          child: Text(bible.abbreviation),
                         );
                       }).toList(),
                       onChanged: _onBibleChanged,
@@ -588,49 +751,92 @@ class _BiblePageState extends State<BiblePage> {
           ),
           SizedBox(height: shouldUseWebLayout ? 24 : 16),
           
+          // Show instruction
+          Container(
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.touch_app,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Click on any verse number to view the full chapter in a popup window',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
           // Verses with responsive layout
           if (shouldUseWebLayout) ...[
             // Web layout - wider text with larger font
             ..._verses.map((verse) => Container(
               width: double.infinity,
               margin: const EdgeInsets.only(bottom: 20),
-              child: RichText(
-                text: TextSpan(
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontSize: 18,
-                    height: 1.6,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: '${verse.verseNumber} ',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                        fontSize: 20,
+              child: InkWell(
+                onTap: () => _onVerseClick(verse),
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                  child: RichText(
+                    text: TextSpan(
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontSize: 18,
+                        height: 1.6,
                       ),
+                      children: [
+                        TextSpan(
+                          text: '${verse.verseNumber} ',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                            fontSize: 20,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                        TextSpan(text: verse.text),
+                      ],
                     ),
-                    TextSpan(text: verse.text),
-                  ],
+                  ),
                 ),
               ),
             )),
           ] else ...[
             // Mobile layout - compact text
-            ..._verses.map((verse) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: RichText(
-                text: TextSpan(
-                  style: Theme.of(context).textTheme.bodyLarge,
-                  children: [
-                    TextSpan(
-                      text: '${verse.verseNumber} ',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
+            ..._verses.map((verse) => InkWell(
+              onTap: () => _onVerseClick(verse),
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                child: RichText(
+                  text: TextSpan(
+                    style: Theme.of(context).textTheme.bodyLarge,
+                    children: [
+                      TextSpan(
+                        text: '${verse.verseNumber} ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
-                    ),
-                    TextSpan(text: verse.text),
-                  ],
+                      TextSpan(text: verse.text),
+                    ],
+                  ),
                 ),
               ),
             )),

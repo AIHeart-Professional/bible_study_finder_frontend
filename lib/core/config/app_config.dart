@@ -16,19 +16,45 @@ import 'package:flutter/foundation.dart';
 
 class AppConfig {
   // Environment
-  static const String environment = 'development'; // 'development', 'staging', 'production'
-  static const bool isDebugMode = true;
+  // Check for environment variable (set via --dart-define in Codemagic)
+  static const String environment = String.fromEnvironment(
+    'APP_ENVIRONMENT',
+    defaultValue: 'development', // 'development', 'staging', 'production'
+  );
+  
+  // Debug mode: false in production, true otherwise
+  static bool get isDebugMode {
+    const String env = String.fromEnvironment(
+      'APP_ENVIRONMENT',
+      defaultValue: 'development',
+    );
+    return env != 'production';
+  }
   
   // API Configuration
   static const String bibleApiUrl = 'https://api.scripture.api.bible/v1';
   static const String bibleApiKey = 'd91bb5cc08f6b1625b9c8fc4f47e8d4e';
   
   // Backend API Configuration
+  // Priority: Environment variable (for production builds) > Platform-specific defaults
+  // For Codemagic builds, set BACKEND_API_URL via --dart-define
   // For Android emulator: use 10.0.2.2 (maps to host machine's localhost)
   // For iOS simulator: use localhost
   // For web: use localhost
   // For physical devices: use your machine's IP address on local network
   static String get backendApiUrl {
+    // Check for environment variable first (set via --dart-define in Codemagic)
+    const String envApiUrl = String.fromEnvironment(
+      'BACKEND_API_URL',
+      defaultValue: '',
+    );
+    
+    // If environment variable is set, use it (for production builds)
+    if (envApiUrl.isNotEmpty) {
+      return envApiUrl;
+    }
+    
+    // Fall back to platform-specific localhost URLs for local development
     if (kIsWeb) {
       return 'http://localhost:8000';
     } else if (Platform.isAndroid) {
@@ -100,5 +126,17 @@ class AppConfig {
   /// Get the backend API URL for logging/debugging
   static String getBackendApiUrlForLogging() => backendApiUrl;
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
