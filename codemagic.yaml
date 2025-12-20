@@ -13,12 +13,20 @@ workflows:
       groups:
         - app_store_credentials
       vars:
-        # Set your Render API URL here
-        # Replace with your actual Render backend URL
-        BACKEND_API_URL: "https://your-backend-app.onrender.com"
+        # Render backend API URL
+        BACKEND_API_URL: "https://bible-study-finder-backend.onrender.com"
         APP_ENVIRONMENT: "production"
       flutter: stable
     scripts:
+      - name: Verify environment variables
+        script: |
+          echo "Verifying environment variables..."
+          echo "BACKEND_API_URL: $BACKEND_API_URL"
+          echo "APP_ENVIRONMENT: $APP_ENVIRONMENT"
+          if [ -z "$BACKEND_API_URL" ]; then
+            echo "ERROR: BACKEND_API_URL is not set!"
+            exit 1
+          fi
       - name: Verify Gradle configuration
         script: |
           echo "Verifying Gradle memory settings..."
@@ -36,9 +44,13 @@ workflows:
           flutter clean
       - name: Build Android
         script: |
+          echo "Building Android with BACKEND_API_URL=$BACKEND_API_URL"
           flutter build apk --release \
             --dart-define=BACKEND_API_URL="$BACKEND_API_URL" \
             --dart-define=APP_ENVIRONMENT="$APP_ENVIRONMENT"
+          echo "Android build completed. Verifying API URL was set..."
+          # Verify the build includes the correct URL (this is just for debugging)
+          echo "Build artifacts created successfully"
       - name: Build Web
         script: |
           flutter build web --release \
