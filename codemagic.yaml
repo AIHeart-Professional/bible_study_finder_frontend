@@ -8,6 +8,7 @@ workflows:
       branch_patterns:
         - pattern: main
           include: true
+          source: true
     environment:
       groups:
         - app_store_credentials
