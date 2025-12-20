@@ -19,25 +19,29 @@ workflows:
         APP_ENVIRONMENT: "production"
       flutter: stable
     scripts:
+      - name: Verify Gradle configuration
+        script: |
+          echo "Verifying Gradle memory settings..."
+          cat android/gradle.properties | grep -E "jvmargs|daemon|parallel" || echo "Gradle settings check complete"
       - name: Install dependencies
         script: |
           flutter pub get
       - name: Build iOS
         script: |
-          flutter build ios \
-            --release \
+          flutter build ios --release \
             --dart-define=BACKEND_API_URL="$BACKEND_API_URL" \
             --dart-define=APP_ENVIRONMENT="$APP_ENVIRONMENT"
+      - name: Clean Android build
+        script: |
+          flutter clean
       - name: Build Android
         script: |
-          flutter build apk \
-            --release \
+          flutter build apk --release \
             --dart-define=BACKEND_API_URL="$BACKEND_API_URL" \
             --dart-define=APP_ENVIRONMENT="$APP_ENVIRONMENT"
       - name: Build Web
         script: |
-          flutter build web \
-            --release \
+          flutter build web --release \
             --dart-define=BACKEND_API_URL="$BACKEND_API_URL" \
             --dart-define=APP_ENVIRONMENT="$APP_ENVIRONMENT"
     artifacts:
